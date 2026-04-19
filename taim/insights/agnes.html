@@ -1,0 +1,1319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AgnesTheSecond — Insights</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Sora:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0f1a;
+  --surface: #111827;
+  --surface2: #1a2236;
+  --surface3: #222d42;
+  --border: #263350;
+  --text: #e9f4ff;
+  --text2: #8ba3c7;
+  --accent: #6c63ff;
+  --accent2: #00d4aa;
+  --accent3: #f59e0b;
+  --danger: #ef4444;
+  --success: #22c55e;
+  --info: #3b82f6;
+  --warn: #f59e0b;
+  --grad1: linear-gradient(135deg, #6c63ff 0%, #00d4aa 100%);
+  --grad2: linear-gradient(135deg, #6c63ff 0%, #ec4899 100%);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Sora', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+h1,h2,h3,h4 { font-family: 'Space Grotesk', sans-serif; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* Top Nav */
+.topnav {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 32px;
+  height: 56px;
+  gap: 32px;
+  flex-shrink: 0;
+}
+.topnav .logo {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--accent);
+  margin-right: 16px;
+}
+.topnav .logo span { color: var(--accent2); }
+.topnav a {
+  color: var(--text2);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .5px;
+  padding: 16px 4px;
+  border-bottom: 2px solid transparent;
+  transition: color .2s, border-color .2s;
+}
+.topnav a:hover { color: var(--text); }
+.topnav a.active {
+  color: var(--accent2);
+  border-bottom-color: var(--accent2);
+}
+
+/* Layout */
+.content { padding: 24px 32px; max-width: 1400px; margin: 0 auto; }
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0;
+}
+.tab {
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'Space Grotesk', sans-serif;
+  color: var(--text2);
+  cursor: pointer;
+  border: none;
+  background: none;
+  border-bottom: 2px solid transparent;
+  transition: all .2s;
+}
+.tab:hover { color: var(--text); }
+.tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+.pane { display: none; }
+.pane.active { display: block; }
+
+/* Sections */
+.section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin-bottom: 16px;
+}
+.section-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-title .icon { font-size: 18px; }
+
+/* Recommendation Cards */
+.rec-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: border-color .2s, transform .1s;
+}
+.rec-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+.rec-card.open { border-color: var(--accent); }
+.rec-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.rec-priority {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.rec-priority.high { background: rgba(239,68,68,.15); color: #ef4444; }
+.rec-priority.medium { background: rgba(245,158,11,.15); color: #f59e0b; }
+.rec-priority.low { background: rgba(34,197,94,.15); color: #22c55e; }
+.rec-type {
+  font-size: 9px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: rgba(108,99,255,.12);
+  color: var(--accent);
+  text-transform: uppercase;
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+.rec-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  flex: 1;
+}
+.rec-summary {
+  font-size: 12px;
+  color: var(--text2);
+  margin-top: 6px;
+  line-height: 1.5;
+}
+.rec-detail {
+  display: none;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.rec-card.open .rec-detail { display: block; }
+.evidence-list {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0;
+}
+.evidence-list li {
+  font-size: 12px;
+  color: var(--text2);
+  padding: 4px 0 4px 20px;
+  position: relative;
+  line-height: 1.5;
+}
+.evidence-list li::before {
+  content: '→';
+  position: absolute;
+  left: 0;
+  color: var(--accent2);
+  font-weight: 600;
+}
+.caveat-list li::before {
+  content: '⚠';
+  color: var(--warn);
+}
+.impact-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.impact-chip {
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: var(--surface3);
+  border: 1px solid var(--border);
+  color: var(--text2);
+}
+.impact-chip strong { color: var(--text); }
+.confidence-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text2);
+  margin-top: 8px;
+}
+.confidence-fill {
+  width: 60px;
+  height: 5px;
+  background: var(--surface3);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.confidence-fill-inner {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--accent2);
+}
+
+/* Prioritization Framework: grade badge + tension matrix */
+.grade-badge {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.grade-badge.safe_to_consolidate {
+  background: rgba(34,197,94,0.12);
+  color: var(--success);
+  border-color: rgba(34,197,94,0.3);
+}
+.grade-badge.recommended {
+  background: rgba(34,197,94,0.12);
+  color: var(--success);
+  border-color: rgba(34,197,94,0.3);
+}
+.grade-badge.review_required {
+  background: rgba(245,158,11,0.12);
+  color: var(--warn);
+  border-color: rgba(245,158,11,0.3);
+}
+.grade-badge.not_recommended {
+  background: rgba(239,68,68,0.12);
+  color: var(--danger);
+  border-color: rgba(239,68,68,0.3);
+}
+.final-score-pill {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--surface3);
+  border: 1px solid var(--border);
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+.final-score-pill strong {
+  color: var(--accent2);
+  font-size: 13px;
+}
+.downgrade-banner {
+  margin: 10px 0;
+  padding: 10px 12px;
+  background: rgba(245,158,11,0.08);
+  border: 1px solid rgba(245,158,11,0.3);
+  border-radius: 8px;
+  color: var(--warn);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.downgrade-banner strong { color: var(--text); }
+.tension-matrix {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.tension-matrix-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent2);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.dim-row {
+  display: grid;
+  grid-template-columns: 160px 1fr 42px;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+}
+.dim-row .dim-label {
+  color: var(--text2);
+}
+.dim-row .dim-label.key {
+  color: var(--text);
+  font-weight: 600;
+}
+.dim-row .dim-value {
+  font-family: 'Space Grotesk', monospace;
+  font-size: 11px;
+  color: var(--text);
+  text-align: right;
+}
+.dim-fill {
+  height: 6px;
+  background: var(--surface3);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.dim-fill-inner {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--accent);
+  transition: width 0.3s ease;
+}
+.dim-fill-inner.critical { background: var(--danger); }
+.dim-fill-inner.warn { background: var(--warn); }
+.dim-fill-inner.good { background: var(--success); }
+.dim-fill-inner.neutral { background: var(--accent2); }
+
+/* Risk Cards */
+.risk-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin-bottom: 8px;
+}
+.risk-severity {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+.risk-severity.high { background: rgba(239,68,68,.15); color: #ef4444; }
+.risk-severity.medium { background: rgba(245,158,11,.15); color: #f59e0b; }
+.risk-desc {
+  font-size: 12px;
+  color: var(--text2);
+  margin-top: 6px;
+  line-height: 1.5;
+}
+.risk-rec {
+  font-size: 12px;
+  color: var(--accent2);
+  margin-top: 4px;
+  font-style: italic;
+}
+
+/* Substitution */
+.sub-group {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin-bottom: 8px;
+}
+.sub-type {
+  font-size: 9px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+.sub-type.variant { background: rgba(0,212,170,.12); color: var(--accent2); }
+.sub-type.functional { background: rgba(245,158,11,.12); color: var(--warn); }
+.member-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 8px;
+}
+.member-tag {
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 6px;
+  background: var(--surface3);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+/* Category chart */
+.cat-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: 12px;
+}
+.cat-bar-label {
+  width: 200px;
+  flex-shrink: 0;
+  color: var(--text2);
+  text-align: right;
+}
+.cat-bar-track {
+  flex: 1;
+  height: 18px;
+  background: var(--surface3);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.cat-bar-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 4px;
+  transition: width .5s ease;
+  display: flex;
+  align-items: center;
+  padding-left: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #fff;
+  min-width: 24px;
+}
+
+/* Consolidation */
+.consol-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: border-color .2s;
+}
+.consol-card:hover { border-color: var(--accent); }
+.consol-card.open { border-color: var(--accent); }
+.consol-detail {
+  display: none;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.consol-card.open .consol-detail { display: block; }
+
+/* ── Compact Table ─────────────────────────── */
+.xt { width:100%; border-collapse:collapse; }
+.xt th { font-size:10px; text-transform:uppercase; color:var(--text2); padding:6px 10px; text-align:left; border-bottom:1px solid var(--border); background:var(--bg); position:sticky; top:0; z-index:1; letter-spacing:.5px; }
+.xt td { padding:7px 10px; font-size:12px; border-bottom:1px solid rgba(38,51,80,.4); }
+.xt tr.xr { cursor:pointer; transition:background .12s; }
+.xt tr.xr:hover td { background:var(--surface2); }
+.xname { font-weight:600; min-width:160px; white-space:normal; word-break:break-word; }
+.xnum { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+
+/* ── Popup Modal ───────────────────────────── */
+.popup-overlay {
+  position:fixed; inset:0; z-index:200;
+  background:rgba(0,0,0,.55); backdrop-filter:blur(4px);
+  display:flex; align-items:center; justify-content:center;
+  animation:popFadeIn .15s ease;
+}
+@keyframes popFadeIn { from{opacity:0} to{opacity:1} }
+.popup-panel {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:14px; padding:0; min-width:380px; max-width:820px;
+  width:92vw; max-height:85vh; display:flex; flex-direction:column;
+  box-shadow:0 12px 40px rgba(0,0,0,.5);
+  animation:popSlideUp .2s ease;
+}
+@keyframes popSlideUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:none} }
+.popup-header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:14px 20px; border-bottom:1px solid var(--border); gap:10px;
+}
+.popup-header h3 { font-size:14px; margin:0; flex:1; }
+.popup-close {
+  background:none; border:none; color:var(--text2); font-size:18px;
+  cursor:pointer; padding:2px 6px; border-radius:6px; transition:all .15s;
+}
+.popup-close:hover { color:var(--text); background:var(--surface2); }
+.popup-body { overflow-y:auto; padding:12px 16px 16px; }
+
+/* Search */
+.search-input {
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 13px;
+  font-family: 'Sora', sans-serif;
+  outline: none;
+  margin-bottom: 14px;
+}
+.search-input:focus { border-color: var(--accent); }
+
+/* Filters */
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 14px;
+}
+.filter-btn {
+  font-size: 11px;
+  padding: 5px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text2);
+  cursor: pointer;
+  font-family: 'Sora', sans-serif;
+  transition: all .2s;
+}
+.filter-btn:hover { border-color: var(--text2); color: var(--text); }
+.filter-btn.active {
+  background: rgba(108,99,255,.15);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Loading */
+.loading {
+  text-align: center;
+  padding: 40px;
+  color: var(--text2);
+  font-size: 14px;
+}
+.loading::after {
+  content: '';
+  display: block;
+  width: 32px; height: 32px;
+  margin: 12px auto 0;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Info Tip */
+.info-tip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text2);
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Space Grotesk', sans-serif;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all .2s;
+}
+.info-tip:hover { border-color: var(--accent); color: var(--accent); }
+.info-tip.active { border-color: var(--accent); color: var(--accent); background: rgba(108,99,255,.15); }
+.info-tip .info-popup {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  width: 340px;
+  max-width: calc(100vw - 32px);
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 400;
+  font-family: 'Sora', sans-serif;
+  color: var(--text);
+  line-height: 1.6;
+  box-shadow: 0 8px 32px rgba(0,0,0,.4);
+  white-space: normal;
+}
+.info-tip .info-popup strong { color: var(--accent2); }
+.info-tip.active .info-popup { display: block; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<div class="topnav">
+  <div class="logo">Agnes<span>TheSecond</span></div>
+  <a href="/">Chat</a>
+  <a href="/cube/">Cube</a>
+  <a href="/explorer/">Explorer</a>
+  <a href="/agnes/" class="active">Insights</a>
+  <a href="/sourcing/">Sourcing</a>
+</div>
+
+<div class="content">
+  <div id="loadingState" class="loading">Agnes is analyzing your supply chain data…</div>
+
+  <div id="mainContent" style="display:none;">
+    <!-- Tabs -->
+    <div class="tabs" id="tabBar">
+      <button class="tab active" data-pane="recsPane">Recommendations</button>
+      <button class="tab" data-pane="consolPane">Consolidation</button>
+      <button class="tab" data-pane="subsPane">Substitutions</button>
+      <button class="tab" data-pane="risksPane">Risks</button>
+      <button class="tab" data-pane="ingrPane">Ingredient Intel</button>
+    </div>
+
+    <!-- Recommendations Pane -->
+    <div class="pane active" id="recsPane">
+      <div class="filter-row">
+        <button class="filter-btn active" data-filter="all">All</button>
+        <button class="filter-btn" data-filter="high">High Priority</button>
+        <button class="filter-btn" data-filter="consolidation">Consolidation</button>
+        <button class="filter-btn" data-filter="risk_mitigation">Risk Mitigation</button>
+        <button class="filter-btn" data-filter="substitution">Substitution</button>
+        <button class="filter-btn" data-filter="cost_optimization">Cost Optimization</button>
+        <span class="info-tip">?
+          <div class="info-popup">
+            Agnes generates <strong>actionable recommendations</strong> by analyzing your entire supply chain.<br><br>
+            <strong>Consolidation</strong> — reduce supplier fragmentation by routing more volume through one preferred supplier.<br>
+            <strong>Risk Mitigation</strong> — address single-source dependencies and supplier concentration risks.<br>
+            <strong>Substitution</strong> — swap similar ingredients across companies to unlock better pricing or reduce risk.<br>
+            <strong>Cost Optimization</strong> — switch to a cheaper supplier while maintaining quality and compliance standards.
+          </div>
+        </span>
+        <span id="recCount" style="font-size:11px;color:var(--text2);margin-left:auto;"></span>
+      </div>
+      <div id="recsList"></div>
+    </div>
+
+    <!-- Consolidation Pane -->
+    <div class="pane" id="consolPane">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+        <input class="search-input" id="consolSearch" placeholder="Search consolidation opportunities…" style="margin-bottom:0;flex:1;">
+        <span class="info-tip">?
+          <div class="info-popup">
+            <strong>Consolidation</strong> means multiple companies buy the same ingredient from different suppliers. Agnes finds the supplier that already serves the most companies and recommends routing everyone through them — so you can <strong>negotiate better volume pricing</strong> and simplify logistics.<br><br>
+            Each card shows the ingredient, how many companies use it, the current supplier spread, and the recommended single supplier to consolidate on.
+          </div>
+        </span>
+      </div>
+      <div id="consolList"></div>
+    </div>
+
+    <!-- Substitutions Pane -->
+    <div class="pane" id="subsPane">
+      <input class="search-input" id="subsSearch" placeholder="Search substitution groups by ingredient name…">
+      <div class="filter-row">
+        <button class="filter-btn sub-filter active" data-type="all">All</button>
+        <button class="filter-btn sub-filter" data-type="variant">Variants</button>
+        <button class="filter-btn sub-filter" data-type="functional">Functional</button>
+        <span class="info-tip">?
+          <div class="info-popup">
+            Agnes groups ingredients that could <strong>potentially replace each other</strong>, so companies can coordinate sourcing.<br><br>
+            <strong>Variants</strong> — different forms/grades of the same core ingredient (e.g. "Vitamin C Ascorbic Acid" vs "Vitamin C Sodium Ascorbate"). These share similar names and belong to the same category. Swapping between variants is usually straightforward.<br><br>
+            <strong>Functional</strong> — different ingredients that serve the <strong>same functional role</strong> (e.g. different types of thickeners or sweeteners). These aren't name-similar but belong to the same category and could be interchanged depending on formulation requirements.<br><br>
+            Each group lists the interchangeable members, how many companies use them, and a confidence score based on name similarity and category match.
+          </div>
+        </span>
+        <span id="subCount" style="font-size:11px;color:var(--text2);margin-left:auto;"></span>
+      </div>
+      <div id="subsList"></div>
+    </div>
+
+    <!-- Risks Pane -->
+    <div class="pane" id="risksPane">
+      <div class="filter-row">
+        <button class="filter-btn risk-filter active" data-type="all">All</button>
+        <button class="filter-btn risk-filter" data-type="single_source">Single Source</button>
+        <button class="filter-btn risk-filter" data-type="supplier_concentration">Supplier Concentration</button>
+        <button class="filter-btn risk-filter" data-type="critical_ingredient">Critical Ingredient</button>
+        <button class="filter-btn risk-filter" data-type="supplier_quality">Supplier Quality</button>
+        <button class="filter-btn risk-filter" data-type="price_volatility">Price Volatility</button>
+        <span class="info-tip">?
+          <div class="info-popup">
+            Agnes flags <strong>supply chain vulnerabilities</strong> that could disrupt your operations.<br><br>
+            <strong>Single Source</strong> — an ingredient is only available from one supplier globally. If that supplier has issues, there's no fallback.<br>
+            <strong>Supplier Concentration</strong> — one supplier provides a large share of ingredients to many companies. Over-reliance on them is risky.<br>
+            <strong>Critical Ingredient</strong> — an ingredient is used by many companies/products, making disruptions high-impact.<br>
+            <strong>Supplier Quality</strong> — a supplier has low quality or compliance scores that may affect product standards.<br>
+            <strong>Price Volatility</strong> — an ingredient's price swings significantly across orders, creating budget uncertainty.
+          </div>
+        </span>
+        <span id="riskCount" style="font-size:11px;color:var(--text2);margin-left:auto;"></span>
+      </div>
+      <div id="risksList"></div>
+    </div>
+
+    <!-- Ingredient Intel Pane -->
+    <div class="pane" id="ingrPane">
+      <input class="search-input" id="ingrSearch" placeholder="Search ingredients…">
+      <div class="filter-row" id="catFilters"></div>
+      <div id="ingrList"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '/agnes/api';
+let analysisData = null;
+let allRecs = [];
+let allConsol = [];
+let allSubs = [];
+let allRisks = [];
+let allIngredients = [];
+
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+async function api(path) {
+  const url = API + path;
+  console.log('[Agnes] Fetching:', url);
+  const res = await fetch(url);
+  console.log('[Agnes] Response:', url, res.status);
+  if (!res.ok) throw new Error(`API ${path}: ${res.status}`);
+  const data = await res.json();
+  console.log('[Agnes] Data from', path, ':', typeof data, Array.isArray(data) ? data.length : Object.keys(data));
+  return data;
+}
+
+// ── Init ──────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+  const loadEl = document.getElementById('loadingState');
+  const mainEl = document.getElementById('mainContent');
+
+  function dbg(msg) {
+    console.log('[Agnes]', msg);
+    if (loadEl) loadEl.textContent = msg;
+  }
+
+  try {
+    dbg('Step 1: Starting API calls...');
+
+    let analysis, recs, consol, subs, risks, ingredients;
+    try {
+      dbg('Fetching /analysis...');
+      analysis = await api('/analysis');
+      dbg('Got analysis: ' + JSON.stringify(Object.keys(analysis)));
+    } catch(e) { dbg('FAIL /analysis: ' + e.message); throw e; }
+
+    try {
+      dbg('Fetching /recommendations...');
+      recs = await api('/recommendations');
+      dbg('Got recs: ' + (recs.recommendations ? recs.recommendations.length : 'NO .recommendations key, keys=' + JSON.stringify(Object.keys(recs))));
+    } catch(e) { dbg('FAIL /recommendations: ' + e.message); throw e; }
+
+    try {
+      dbg('Fetching /consolidation...');
+      consol = await api('/consolidation');
+      dbg('Got consol: ' + (consol.opportunities ? consol.opportunities.length : 'NO .opportunities'));
+    } catch(e) { dbg('FAIL /consolidation: ' + e.message); throw e; }
+
+    try {
+      dbg('Fetching /substitutions...');
+      subs = await api('/substitutions');
+      dbg('Got subs: ' + (subs.groups ? subs.groups.length : 'NO .groups'));
+    } catch(e) { dbg('FAIL /substitutions: ' + e.message); throw e; }
+
+    try {
+      dbg('Fetching /risks...');
+      risks = await api('/risks');
+      dbg('Got risks: ' + (risks.risks ? risks.risks.length : 'NO .risks'));
+    } catch(e) { dbg('FAIL /risks: ' + e.message); throw e; }
+
+    try {
+      dbg('Fetching /ingredients...');
+      ingredients = await api('/ingredients');
+      dbg('Got ingredients: ' + (ingredients.ingredients ? ingredients.ingredients.length : 'NO .ingredients'));
+    } catch(e) { dbg('FAIL /ingredients: ' + e.message); throw e; }
+
+    analysisData = analysis;
+    allRecs = recs.recommendations || [];
+    allConsol = consol.opportunities || [];
+    allSubs = subs.groups || [];
+    allRisks = risks.risks || [];
+    allIngredients = ingredients.ingredients || [];
+
+    dbg('Data loaded: ' + allRecs.length + ' recs, ' + allConsol.length + ' consol, ' + allSubs.length + ' subs, ' + allRisks.length + ' risks, ' + allIngredients.length + ' ingr');
+
+    loadEl.style.display = 'none';
+    mainEl.style.display = 'block';
+
+    const renderErrors = [];
+    try { renderRecs(allRecs); } catch(e) { renderErrors.push('renderRecs: ' + e.message); console.error('renderRecs', e); }
+    try { renderConsol(allConsol); } catch(e) { renderErrors.push('renderConsol: ' + e.message); console.error('renderConsol', e); }
+    try { renderSubs(allSubs); } catch(e) { renderErrors.push('renderSubs: ' + e.message); console.error('renderSubs', e); }
+    try { renderRisks(allRisks); } catch(e) { renderErrors.push('renderRisks: ' + e.message); console.error('renderRisks', e); }
+    try { renderCatFilters(analysis.summary.categoryDistribution); } catch(e) { renderErrors.push('renderCatFilters: ' + e.message); console.error('renderCatFilters', e); }
+    try { renderIngredients(allIngredients); } catch(e) { renderErrors.push('renderIngredients: ' + e.message); console.error('renderIngredients', e); }
+
+    if (renderErrors.length) {
+      console.error('[Agnes] Render errors:', renderErrors);
+    }
+
+    console.log('[Agnes] Init complete. recsList innerHTML length:', document.getElementById('recsList').innerHTML.length);
+
+  } catch (e) {
+    console.error('[Agnes] Fatal:', e);
+    loadEl.innerHTML = '<div style="color:var(--danger);padding:20px;">Error: ' + (e.message || String(e)) + '<br>Open browser console (F12) for details.</div>';
+    return;
+  }
+
+  // Tab switching
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById(tab.dataset.pane).classList.add('active');
+    });
+  });
+
+  // Rec filters
+  document.querySelectorAll('#recsPane .filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#recsPane .filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const f = btn.dataset.filter;
+      let filtered = allRecs;
+      if (f === 'high') filtered = allRecs.filter(r => r.priority === 'high');
+      else if (f !== 'all') filtered = allRecs.filter(r => r.type === f);
+      renderRecs(filtered);
+    });
+  });
+
+  // Sub filters + search
+  function filterSubs() {
+    const t = document.querySelector('.sub-filter.active')?.dataset.type || 'all';
+    const q = (document.getElementById('subsSearch').value || '').toLowerCase();
+    let filtered = allSubs;
+    if (t !== 'all') filtered = filtered.filter(g => g.type === t);
+    if (q) filtered = filtered.filter(g => g.memberNames.some(n => n.toLowerCase().includes(q)) || g.category.toLowerCase().includes(q));
+    renderSubs(filtered);
+  }
+  document.querySelectorAll('.sub-filter').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.sub-filter').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      filterSubs();
+    });
+  });
+  let subsTimer;
+  document.getElementById('subsSearch').addEventListener('input', () => {
+    clearTimeout(subsTimer);
+    subsTimer = setTimeout(filterSubs, 200);
+  });
+
+  // Risk filters
+  document.querySelectorAll('.risk-filter').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.risk-filter').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const t = btn.dataset.type;
+      renderRisks(t === 'all' ? allRisks : allRisks.filter(r => r.type === t));
+    });
+  });
+
+  // Consolidation search
+  let consolTimer;
+  document.getElementById('consolSearch').addEventListener('input', (e) => {
+    clearTimeout(consolTimer);
+    consolTimer = setTimeout(() => {
+      const q = e.target.value.toLowerCase();
+      renderConsol(q ? allConsol.filter(c => c.ingredientName.toLowerCase().includes(q)) : allConsol);
+    }, 200);
+  });
+
+  // Ingredient search
+  let ingrTimer;
+  document.getElementById('ingrSearch').addEventListener('input', (e) => {
+    clearTimeout(ingrTimer);
+    ingrTimer = setTimeout(() => {
+      const q = e.target.value.toLowerCase();
+      const cat = document.querySelector('#catFilters .filter-btn.active')?.dataset.cat || 'all';
+      let filtered = allIngredients;
+      if (q) filtered = filtered.filter(i => i.name.toLowerCase().includes(q) || i.baseName.includes(q));
+      if (cat !== 'all') filtered = filtered.filter(i => i.category === cat);
+      renderIngredients(filtered);
+    }, 200);
+  });
+});
+
+// ── Render: Recommendations ───────────────────
+// Prioritization Framework: render the 5-dimension tension matrix
+// Returns empty string when dims are absent (non-consolidation rec, old data).
+const DIM_ORDER = [
+  ['consolidation_benefit', 'Consolidation leverage'],
+  ['evidence_confidence',   'Evidence confidence'],
+  ['compliance_fit',        'Compliance fit'],
+  ['supplier_diversification', 'Supplier diversification'],
+  ['switching_feasibility', 'Switching feasibility'],
+];
+const SAFETY_DIMS = new Set([
+  'supplier_diversification', 'compliance_fit',
+  'compliance_compatibility', 'quality_assurance',
+  'mitigation_feasibility',
+]);
+function dimFillClass(key, value) {
+  if (SAFETY_DIMS.has(key)) {
+    if (value < 0.30) return 'critical';
+    if (value < 0.55) return 'warn';
+    return 'good';
+  }
+  return '';
+}
+function renderTensionMatrix(dims, labels) {
+  if (!dims) return '';
+  const order = labels || DIM_ORDER;
+  return `
+    <div class="tension-matrix">
+      <div class="tension-matrix-title">Prioritization Framework</div>
+      ${order.map(([key, label]) => {
+        const v = Number(dims[key] || 0);
+        const pct = Math.round(v * 100);
+        const cls = dimFillClass(key, v);
+        const isKey = SAFETY_DIMS.has(key);
+        return `
+          <div class="dim-row">
+            <div class="dim-label ${isKey ? 'key' : ''}">${label}${isKey ? ' ⚙' : ''}</div>
+            <div class="dim-fill"><div class="dim-fill-inner ${cls}" style="width:${pct}%"></div></div>
+            <div class="dim-value">${v.toFixed(2)}</div>
+          </div>`;
+      }).join('')}
+    </div>`;
+}
+function gradeBadge(grade) {
+  if (!grade) return '';
+  const label = grade.replace(/_/g, ' ');
+  return `<span class="grade-badge ${grade}">${label}</span>`;
+}
+
+function renderRecs(recs) {
+  document.getElementById('recCount').textContent = `${recs.length} recommendation${recs.length !== 1 ? 's' : ''}`;
+  if (!recs.length) {
+    document.getElementById('recsList').innerHTML = '<div style="color:var(--text2);padding:20px">No recommendations match this filter.</div>';
+    return;
+  }
+
+  let html = `<table class="xt"><thead><tr>
+    <th>Priority</th><th>Type</th><th>Title</th><th>Grade</th><th style="text-align:right;">Score</th><th style="text-align:right;">Confidence</th>
+  </tr></thead><tbody>`;
+  recs.forEach((r, i) => {
+    const score = r.dimensions ? Number(r.finalScore).toFixed(2) : '—';
+    const conf = Math.round(r.confidence * 100) + '%';
+    html += `<tr class="xr" data-rec-idx="${i}">
+      <td><span class="rec-priority ${r.priority}" style="font-size:10px;padding:2px 7px;border-radius:4px;">${r.priority}</span></td>
+      <td><span class="rec-type">${r.type.replace('_', ' ')}</span></td>
+      <td class="xname">${esc(r.title)}</td>
+      <td>${gradeBadge(r.grade)}</td>
+      <td class="xnum">${score}</td>
+      <td class="xnum">${conf}</td>
+    </tr>`;
+  });
+  html += `</tbody></table>`;
+  document.getElementById('recsList').innerHTML = html;
+
+  document.querySelectorAll('#recsList .xr').forEach(row => {
+    row.addEventListener('click', () => {
+      const r = recs[+row.dataset.recIdx];
+      openRecPopup(r);
+    });
+  });
+}
+
+function openRecPopup(r) {
+  const overlay = document.createElement('div');
+  overlay.className = 'popup-overlay';
+
+  const hasFramework = r.dimensions;
+  const scorePill = hasFramework
+    ? `<span class="final-score-pill">Score <strong>${Number(r.finalScore).toFixed(2)}</strong></span>` : '';
+  const downgradeBanner = r.concentrationRiskDowngrade ? `
+    <div class="downgrade-banner">
+      <strong>⚙ Concentration-risk veto fired.</strong> The network has ≤2 suppliers
+      for this ingredient, so full consolidation would create single-source risk.
+      Agnes downgraded this recommendation — consolidate most volume, but keep
+      a qualified backup. <em>Maximum leverage with minimum concentration risk.</em>
+    </div>` : '';
+
+  let body = '';
+  body += `<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;">`;
+  body += `<span class="rec-priority ${r.priority}">${r.priority}</span>`;
+  body += `<span class="rec-type">${r.type.replace('_', ' ')}</span>`;
+  body += gradeBadge(r.grade);
+  body += scorePill;
+  body += `</div>`;
+  body += `<div style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:14px;">${esc(r.summary)}</div>`;
+  body += downgradeBanner;
+  body += renderTensionMatrix(r.dimensions, r.dimensionLabels);
+  body += `<div style="margin:10px 0;">
+    <strong style="font-size:12px;color:var(--accent2);">Impact</strong>
+    <div class="impact-chips">
+      ${Object.entries(r.impact).map(([k, v]) =>
+        `<span class="impact-chip"><strong>${esc(String(v))}</strong> ${esc(k.replace(/([A-Z])/g, ' $1').toLowerCase())}</span>`
+      ).join('')}
+    </div>
+  </div>`;
+  body += `<div style="margin-bottom:10px;">
+    <strong style="font-size:12px;color:var(--accent2);">Evidence</strong>
+    <ul class="evidence-list">${r.evidence.map(e => `<li>${esc(e)}</li>`).join('')}</ul>
+  </div>`;
+  if (r.caveats && r.caveats.length) {
+    body += `<div style="margin-bottom:10px;">
+      <strong style="font-size:12px;color:var(--warn);">Caveats</strong>
+      <ul class="evidence-list caveat-list">${r.caveats.map(c => `<li>${esc(c)}</li>`).join('')}</ul>
+    </div>`;
+  }
+  body += `<div class="confidence-bar">
+    Confidence: <div class="confidence-fill"><div class="confidence-fill-inner" style="width:${Math.round(r.confidence * 100)}%"></div></div> ${Math.round(r.confidence * 100)}%
+  </div>`;
+
+  overlay.innerHTML = `<div class="popup-panel">
+    <div class="popup-header"><h3>${esc(r.title)}</h3><button class="popup-close">✕</button></div>
+    <div class="popup-body">${body}</div>
+  </div>`;
+  document.body.appendChild(overlay);
+
+  const close = () => overlay.remove();
+  overlay.querySelector('.popup-close').addEventListener('click', close);
+  overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+  document.addEventListener('keydown', function eh(e) { if (e.key === 'Escape') { close(); document.removeEventListener('keydown', eh); } });
+}
+
+// ── Render: Consolidation ─────────────────────
+function renderConsol(opps) {
+  if (!opps.length) {
+    document.getElementById('consolList').innerHTML = '<div style="color:var(--text2);padding:20px">No consolidation opportunities found.</div>';
+    return;
+  }
+
+  let html = `<table class="xt"><thead><tr>
+    <th>Ingredient</th><th>Category</th><th>Grade</th><th style="text-align:right;">Companies</th>
+    <th style="text-align:right;">Suppliers</th><th>Recommended</th><th style="text-align:right;">Savings</th><th style="text-align:right;">Score</th>
+  </tr></thead><tbody>`;
+  opps.forEach((o, i) => {
+    const savings = o.costAnalysis && o.costAnalysis.estimatedSavings > 0
+      ? `$${Number(o.costAnalysis.estimatedSavings).toLocaleString()}` : '—';
+    const score = typeof o.finalScore === 'number' ? Number(o.finalScore).toFixed(2) : '—';
+    html += `<tr class="xr" data-consol-idx="${i}">
+      <td class="xname">${esc(o.ingredientName)}</td>
+      <td style="font-size:11px;color:var(--text2);">${esc(o.category)}</td>
+      <td>${gradeBadge(o.grade)}</td>
+      <td class="xnum">${o.companyCount}</td>
+      <td class="xnum">${o.currentSupplierCount}</td>
+      <td style="font-size:11px;color:var(--accent2);">${esc(o.recommendedSupplierName)}</td>
+      <td class="xnum" style="color:var(--success);">${savings}</td>
+      <td class="xnum">${score}</td>
+    </tr>`;
+  });
+  html += `</tbody></table>`;
+  document.getElementById('consolList').innerHTML = html;
+
+  document.querySelectorAll('#consolList .xr').forEach(row => {
+    row.addEventListener('click', () => {
+      const o = opps[+row.dataset.consolIdx];
+      openConsolPopup(o);
+    });
+  });
+}
+
+function openConsolPopup(o) {
+  const overlay = document.createElement('div');
+  overlay.className = 'popup-overlay';
+
+  const dims = o.prioritization && o.prioritization.dimensions;
+  const downgradeBanner = o.concentrationRiskDowngrade ? `
+    <div class="downgrade-banner">
+      <strong>⚙ Concentration-risk veto fired.</strong> Network has only
+      ${o.prioritization.globalSupplierCount} global supplier(s) for this
+      ingredient — full consolidation would create single-source risk. Keep
+      at least one qualified backup. <em>Maximum leverage with minimum
+      concentration risk.</em>
+    </div>` : '';
+  const scorePill = typeof o.finalScore === 'number'
+    ? `<span class="final-score-pill">Score <strong>${Number(o.finalScore).toFixed(2)}</strong></span>` : '';
+
+  let body = '';
+  body += `<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;">`;
+  body += `<span style="font-size:11px;color:var(--text2);">${esc(o.category)}</span>`;
+  body += gradeBadge(o.grade);
+  body += scorePill;
+  body += `<span class="impact-chip"><strong>${o.companyCount}</strong> companies</span>`;
+  body += `<span class="impact-chip"><strong>${o.currentSupplierCount}</strong> suppliers → <strong>1</strong></span>`;
+  body += `<span class="impact-chip" style="border-color:var(--accent2);color:var(--accent2);">→ ${esc(o.recommendedSupplierName)}</span>`;
+  if (o.costAnalysis && o.costAnalysis.estimatedSavings > 0) {
+    body += `<span class="impact-chip" style="border-color:var(--success);color:var(--success);">💰 Save $${Number(o.costAnalysis.estimatedSavings).toLocaleString()} (${o.costAnalysis.savingsPercent.toFixed(1)}%)</span>`;
+  }
+  body += `</div>`;
+  body += downgradeBanner;
+  body += renderTensionMatrix(dims);
+
+  if (o.costAnalysis) {
+    body += `<div style="margin-bottom:10px;">
+      <strong style="font-size:12px;color:var(--success);">Cost Analysis</strong>
+      <div class="impact-chips" style="margin-top:6px;">
+        <span class="impact-chip">Current total spend: <strong>$${Number(o.costAnalysis.currentTotalSpend).toLocaleString()}</strong></span>
+        <span class="impact-chip">Consolidated price: <strong>$${o.costAnalysis.consolidatedPrice.toFixed(2)}/kg</strong></span>
+        ${o.costAnalysis.bestSupplierQuality ? `<span class="impact-chip">Supplier quality: <strong>${o.costAnalysis.bestSupplierQuality.toFixed(0)}</strong></span>` : ''}
+        ${o.costAnalysis.bestSupplierCompliance ? `<span class="impact-chip">Compliance: <strong>${o.costAnalysis.bestSupplierCompliance.toFixed(0)}</strong></span>` : ''}
+        ${o.costAnalysis.bestSupplierReliability ? `<span class="impact-chip">Reliability: <strong>${o.costAnalysis.bestSupplierReliability.toFixed(0)}</strong></span>` : ''}
+        ${o.costAnalysis.bestSupplierRisk ? `<span class="impact-chip" style="border-color:${o.costAnalysis.bestSupplierRisk === 'low' ? 'var(--success)' : 'var(--warn)'};color:${o.costAnalysis.bestSupplierRisk === 'low' ? 'var(--success)' : 'var(--warn)'};">${o.costAnalysis.bestSupplierRisk} risk</span>` : ''}
+      </div>
+    </div>`;
+  }
+  body += `<div style="margin-bottom:10px;">
+    <strong style="font-size:12px;color:var(--accent2);">Current Supplier Landscape</strong>
+    <div class="impact-chips" style="margin-top:6px;">
+      ${o.currentSuppliers.map(s =>
+        `<span class="impact-chip">${esc(s.name)} <strong>(${s.coverage} co${s.coverage !== 1 ? 's' : ''})</strong></span>`
+      ).join('')}
+    </div>
+  </div>`;
+  if (o.additionalCompanyNames.length) {
+    body += `<div style="margin-bottom:10px;">
+      <strong style="font-size:12px;color:var(--warn);">Companies to Onboard</strong>
+      <div class="impact-chips" style="margin-top:6px;">
+        ${o.additionalCompanyNames.map(n => `<span class="impact-chip">${esc(n)}</span>`).join('')}
+      </div>
+    </div>`;
+  }
+  body += `<div>
+    <strong style="font-size:12px;color:var(--accent2);">Evidence</strong>
+    <ul class="evidence-list">${o.evidence.map(e => `<li>${esc(e)}</li>`).join('')}</ul>
+  </div>`;
+
+  overlay.innerHTML = `<div class="popup-panel">
+    <div class="popup-header"><h3>${esc(o.ingredientName)}</h3><button class="popup-close">✕</button></div>
+    <div class="popup-body">${body}</div>
+  </div>`;
+  document.body.appendChild(overlay);
+
+  const close = () => overlay.remove();
+  overlay.querySelector('.popup-close').addEventListener('click', close);
+  overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+  document.addEventListener('keydown', function eh(e) { if (e.key === 'Escape') { close(); document.removeEventListener('keydown', eh); } });
+}
+
+// ── Render: Substitutions ─────────────────────
+function renderSubs(groups) {
+  document.getElementById('subCount').textContent = `${groups.length} group${groups.length !== 1 ? 's' : ''}`;
+  if (!groups.length) {
+    document.getElementById('subsList').innerHTML = '<div style="color:var(--text2);padding:20px">No substitution groups found.</div>';
+    return;
+  }
+  document.getElementById('subsList').innerHTML = groups.map(g => {
+    const typeLabel = g.type === 'variant'
+      ? 'Different forms of the same ingredient — likely interchangeable'
+      : 'Same functional role — may substitute depending on formulation';
+    return `
+    <div class="sub-group">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <span class="sub-type ${g.type}">${g.type}</span>
+        <span style="font-size:12px;color:var(--text2);">${esc(g.category)}</span>
+        <span style="margin-left:auto;font-size:11px;color:var(--text2);">${g.totalCompanies} companies · ${g.totalSuppliers} suppliers</span>
+      </div>
+      <div style="font-size:11px;color:var(--text2);margin-bottom:6px;font-style:italic;">${typeLabel}</div>
+      <div style="font-size:11px;color:var(--accent);margin-bottom:4px;">These ingredients may be interchangeable:</div>
+      <div class="member-tags">
+        ${g.memberNames.map(n => `<span class="member-tag">${esc(n)}</span>`).join('')}
+      </div>
+      ${g.allergenConsiderations.length ? `
+      <div style="font-size:11px;color:var(--warn);margin-top:6px;">
+        ⚠ Allergen considerations: ${esc(g.allergenConsiderations.join(', '))}
+      </div>` : ''}
+      <div class="confidence-bar" style="margin-top:8px;">
+        Confidence: <div class="confidence-fill"><div class="confidence-fill-inner" style="width:${Math.round(g.confidence * 100)}%"></div></div> ${Math.round(g.confidence * 100)}%
+      </div>
+    </div>
+  `}).join('');
+}
+
+// ── Render: Risks ─────────────────────────────
+function renderRisks(risks) {
+  document.getElementById('riskCount').textContent = `${risks.length} risk${risks.length !== 1 ? 's' : ''}`;
+  if (!risks.length) {
+    document.getElementById('risksList').innerHTML = '<div style="color:var(--text2);padding:20px">No risk items match this filter.</div>';
+    return;
+  }
+  document.getElementById('risksList').innerHTML = risks.map(r => `
+    <div class="risk-card">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span class="risk-severity ${r.severity}">${r.severity}</span>
+        <span style="font-size:12px;color:var(--text2);">${esc(r.type.replace(/_/g, ' '))}</span>
+        ${r.ingredientName ? `<strong style="font-size:13px;">${esc(r.ingredientName)}</strong>` : ''}
+        ${r.supplierName ? `<span style="font-size:12px;color:var(--info);">${esc(r.supplierName)}</span>` : ''}
+      </div>
+      <div class="risk-desc">${esc(r.description)}</div>
+      <div class="risk-rec">💡 ${esc(r.recommendation)}</div>
+    </div>
+  `).join('');
+}
+
+// ── Render: Category Filters ──────────────────
+function renderCatFilters(cats) {
+  const el = document.getElementById('catFilters');
+  el.innerHTML = `<button class="filter-btn active" data-cat="all">All (${allIngredients.length})</button>` +
+    cats.map(c => `<button class="filter-btn" data-cat="${c.id}">${esc(c.category)} (${c.count})</button>`).join('');
+  el.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      el.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const cat = btn.dataset.cat;
+      const q = document.getElementById('ingrSearch').value.toLowerCase();
+      let filtered = allIngredients;
+      if (cat !== 'all') filtered = filtered.filter(i => i.category === cat);
+      if (q) filtered = filtered.filter(i => i.name.toLowerCase().includes(q) || i.baseName.includes(q));
+      renderIngredients(filtered);
+    });
+  });
+}
+
+// ── Render: Ingredients ───────────────────────
+function renderIngredients(ingrs) {
+  if (!ingrs.length) {
+    document.getElementById('ingrList').innerHTML = '<div style="color:var(--text2);padding:20px">No ingredients match.</div>';
+    return;
+  }
+  document.getElementById('ingrList').innerHTML = ingrs.map(i => `
+    <div class="rec-card" style="padding:12px 16px;">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <strong style="font-size:13px;flex:1;min-width:200px;">${esc(i.name)}</strong>
+        <span style="font-size:10px;padding:2px 8px;border-radius:4px;background:var(--surface3);color:var(--text2);">${esc(i.categoryLabel)}</span>
+        <span class="impact-chip"><strong>${i.companyCount}</strong> companies</span>
+        <span class="impact-chip"><strong>${i.supplierCount}</strong> supplier${i.supplierCount !== 1 ? 's' : ''}</span>
+        <span class="impact-chip"><strong>${i.productCount}</strong> SKUs</span>
+        ${i.singleSourceCount > 0 ? `<span class="impact-chip" style="border-color:var(--danger);color:var(--danger);"><strong>${i.singleSourceCount}</strong> single-source</span>` : ''}
+        ${i.allergens.length ? `<span class="impact-chip" style="border-color:var(--warn);color:var(--warn);">⚠ ${esc(i.allergens.join(', '))}</span>` : ''}
+        ${i.qualityFlags.length ? i.qualityFlags.map(f => `<span class="impact-chip" style="border-color:var(--success);color:var(--success);">${esc(f)}</span>`).join('') : ''}
+      </div>
+      <div class="rec-detail">
+        <div style="margin-bottom:8px;">
+          <strong style="font-size:12px;color:var(--accent2);">Suppliers</strong>
+          <div class="impact-chips" style="margin-top:4px;">
+            ${i.suppliers.map(s => `<span class="impact-chip">${esc(s.name)} <strong>(${s.companyCount} co${s.companyCount !== 1 ? 's' : ''})</strong></span>`).join('')}
+          </div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+
+  document.querySelectorAll('#ingrList .rec-card').forEach(card => {
+    card.addEventListener('click', () => card.classList.toggle('open'));
+  });
+}
+
+// ── Info Tip: click-to-toggle with smart positioning ──
+document.addEventListener('click', (e) => {
+  const tip = e.target.closest('.info-tip');
+  // Close all other open tips
+  document.querySelectorAll('.info-tip.active').forEach(t => {
+    if (t !== tip) t.classList.remove('active');
+  });
+  if (!tip) return;
+  e.stopPropagation();
+  const wasActive = tip.classList.contains('active');
+  if (wasActive) {
+    tip.classList.remove('active');
+    return;
+  }
+  tip.classList.add('active');
+  // Position the popup so it doesn't overflow the viewport
+  const popup = tip.querySelector('.info-popup');
+  if (!popup) return;
+  const rect = tip.getBoundingClientRect();
+  const pw = 340;
+  let left = rect.left;
+  let top = rect.bottom + 8;
+  // If it would overflow right, anchor to right edge
+  if (left + pw > window.innerWidth - 16) {
+    left = window.innerWidth - pw - 16;
+  }
+  // If it would overflow left
+  if (left < 16) left = 16;
+  // If it would overflow bottom, show above
+  if (top + 200 > window.innerHeight) {
+    top = rect.top - 8;
+    popup.style.transform = 'translateY(-100%)';
+  } else {
+    popup.style.transform = 'none';
+  }
+  popup.style.left = left + 'px';
+  popup.style.top = top + 'px';
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,2185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AgnesTheSecond — Explorer</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Sora:wght@300;400;600&display=swap" rel="stylesheet">
+
+<script src="https://unpkg.com/vis-network@9.1.2/dist/vis-network.min.js"></script>
+<style>
+  :root {
+    --bg: #0a0f1a;
+    --surface: #111827;
+    --surface2: #1a2236;
+    --border: #263350;
+    --text: #e9f4ff;
+    --text2: #8ba3c7;
+    --accent: #6c63ff;
+    --accent2: #00d4aa;
+    --company: #f59e0b;
+    --product: #6c63ff;
+    --bom: #ec4899;
+    --component: #00d4aa;
+    --supplier: #3b82f6;
+    --danger: #ef4444;
+    --success: #22c55e;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Sora', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+  h1, h2, h3, h4 { font-family: 'Space Grotesk', sans-serif; }
+
+  /* ── Top Nav ────────────────────────────────── */
+  .topnav {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 32px;
+    height: 56px;
+    gap: 32px;
+    flex-shrink: 0;
+  }
+  .topnav .logo {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--accent);
+    margin-right: 16px;
+  }
+  .topnav .logo span { color: var(--accent2); }
+  .topnav a {
+    color: var(--text2);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: .5px;
+    padding: 16px 4px;
+    border-bottom: 2px solid transparent;
+    transition: color .2s, border-color .2s;
+  }
+  .topnav a:hover { color: var(--text); }
+  .topnav a.active {
+    color: var(--accent2);
+    border-bottom-color: var(--accent2);
+  }
+
+  /* ── Layout ────────────────────────────────── */
+  .app { display: flex; height: calc(100vh - 56px); position: relative; }
+  .sidebar {
+    position: fixed;
+    top: 56px;
+    left: 0;
+    bottom: 0;
+    width: 280px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 20px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    overflow-y: auto;
+    z-index: 50;
+    transform: translateX(-100%);
+    transition: transform .28s cubic-bezier(.4,0,.2,1), box-shadow .28s ease;
+    box-shadow: none;
+  }
+  .sidebar.open {
+    transform: translateX(0);
+    box-shadow: 8px 0 24px rgba(0,0,0,.35);
+  }
+  .sidebar-toggle {
+    position: fixed;
+    left: 0; top: 50%;
+    transform: translateY(-50%);
+    z-index: 48;
+    display: flex; align-items: center;
+    gap: 0;
+    background: var(--surface); border: 1px solid var(--border);
+    border-left: none;
+    border-radius: 0 10px 10px 0;
+    padding: 14px 6px 14px 4px;
+    cursor: pointer;
+    transition: all .25s;
+    writing-mode: vertical-lr;
+    box-shadow: 2px 0 8px rgba(0,0,0,.18);
+  }
+  .sidebar-toggle .arrow { font-size: 11px; color: var(--accent); transition: transform .25s; margin-bottom: 4px; }
+  .sidebar-toggle .label { font-size: 11px; font-weight: 700; font-family:'Space Grotesk',sans-serif; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text2); }
+  .sidebar-toggle:hover { background: var(--surface2); border-color: var(--accent); }
+  .sidebar-toggle:hover .label { color: var(--text); }
+  .sidebar-toggle.active { background: var(--accent); border-color: var(--accent); }
+  .sidebar-toggle.active .label { color: #fff; }
+  .sidebar-toggle.active .arrow { color: #fff; transform: rotate(180deg); }
+  .sidebar-close {
+    display: flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; border-radius: 6px;
+    background: transparent; border: 1px solid var(--border);
+    color: var(--text2); cursor: pointer; font-size: 14px;
+    transition: all .15s; margin-left: auto; flex-shrink: 0;
+  }
+  .sidebar-close:hover { background: var(--surface2); color: var(--text); border-color: var(--accent); }
+  .sidebar-overlay {
+    display: none; position: fixed; inset: 56px 0 0 0;
+    background: rgba(0,0,0,.3); z-index: 49;
+  }
+  .sidebar-overlay.show { display: block; }
+  .main {
+    flex: 1;
+    padding: 12px 36px 28px;
+    overflow-y: auto;
+  }
+
+  /* ── Sidebar Controls ──────────────────────── */
+  .control-group { display: flex; flex-direction: column; gap: 6px; }
+  .control-group label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text2);
+  }
+  select {
+    appearance: none;
+    -webkit-appearance: none;
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    padding: 10px 32px 10px 12px;
+    border-radius: 8px;
+    font-family: 'Sora', sans-serif;
+    font-size: 13px;
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238ba3c7' fill='none' stroke-width='1.5'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+  }
+  select:hover { border-color: var(--accent); }
+  select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(108,99,255,.2); }
+  select option {
+    background: var(--surface2);
+    color: var(--text);
+  }
+
+  /* ── Section Headers ───────────────────────── */
+  .section { margin-top: 16px; }
+  .section-header {
+    font-size: 18px; font-weight: 600; margin-bottom: 14px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .section-header::before {
+    content: '';
+    width: 4px; height: 22px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+
+  /* ── Ingredient Explorer ─────────────────────── */
+  .ingr-controls { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+  .ingr-controls label { font-size: 12px; color: var(--text2); font-weight: 600; }
+
+  /* ── Explorer Table (compact expandable rows) ─ */
+  .xt { width: 100%; border-collapse: collapse; }
+  .xt th {
+    text-align: left; font-size: 10px; font-weight: 700;
+    color: var(--text2); text-transform: uppercase; letter-spacing: .5px;
+    padding: 6px 10px; border-bottom: 2px solid var(--border);
+    position: sticky; top: 0; background: var(--bg); z-index: 2;
+    white-space: nowrap;
+  }
+  .xt td {
+    padding: 7px 10px; font-size: 12px; border-bottom: 1px solid var(--border);
+    white-space: nowrap; vertical-align: middle;
+  }
+  .xt tr.xr { cursor: pointer; transition: background .12s; }
+  .xt tr.xr:hover { background: var(--surface); }
+  .xt tr.xr.open { background: var(--surface); }
+  .xt tr.xr .xarrow {
+    display: inline-block; font-size: 9px; color: var(--text2);
+    transition: transform .2s; width: 14px; text-align: center;
+  }
+  .xt tr.xr.open .xarrow { transform: rotate(90deg); }
+  .xt tr.xr .xname { font-weight: 600; white-space: normal; min-width: 180px; }
+  .xt td.xnum { text-align: right; font-variant-numeric: tabular-nums; }
+  .xt .xwarn { color: #ef4444; font-weight: 700; font-size: 11px; }
+  .xt .xpill {
+    display: inline-block; font-size: 9px; font-weight: 600;
+    padding: 1px 6px; border-radius: 4px;
+  }
+  .xt tr.xdetail > td {
+    padding: 0; border-bottom: 1px solid var(--border);
+  }
+  .xt tr.xdetail .xdbody {
+    display: none; padding: 12px 14px 14px;
+    background: var(--surface); animation: fadeIn .2s ease;
+  }
+  .xt tr.xdetail.open .xdbody { display: block; }
+  .ingr-loading { color: var(--text2); font-size: 12px; padding: 8px 0; }
+
+  /* ── Popup Modal ────────────────────────────── */
+  .popup-overlay {
+    position: fixed; inset: 0; z-index: 200;
+    background: rgba(0,0,0,.55); backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center;
+    animation: popFadeIn .15s ease;
+  }
+  @keyframes popFadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .popup-panel {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 0; min-width: 380px; max-width: 820px;
+    width: 92vw; max-height: 85vh; display: flex; flex-direction: column;
+    box-shadow: 0 12px 40px rgba(0,0,0,.5);
+    animation: popSlideUp .2s ease;
+  }
+  @keyframes popSlideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+  .popup-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 20px; border-bottom: 1px solid var(--border);
+  }
+  .popup-header h3 { font-size: 14px; margin: 0; }
+  .popup-header .popup-close {
+    background: none; border: none; color: var(--text2); font-size: 18px;
+    cursor: pointer; padding: 2px 6px; border-radius: 6px;
+    transition: all .15s;
+  }
+  .popup-header .popup-close:hover { color: var(--text); background: var(--surface2); }
+  .popup-body {
+    overflow-y: auto; padding: 12px 16px 16px;
+  }
+  .popup-body .xt { margin: 0; }
+  .popup-body .xt th { background: var(--surface); }
+  .popup-body .xt tr[style*="cursor:pointer"]:hover td,
+  .popup-body .sup-ing-row:hover td { background: var(--surface2); }
+  .popup-back {
+    background: none; border: 1px solid var(--border); color: var(--text2);
+    font-size: 12px; padding: 4px 12px; border-radius: 6px; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 4px;
+    transition: all .15s; margin-right: 10px;
+  }
+  .popup-back:hover { color: var(--text); border-color: var(--accent); background: var(--surface2); }
+  .popup-badge {
+    font-size: 10px; padding: 2px 7px; border-radius: 4px; font-weight: 600;
+  }
+  .popup-badge.sole { background: rgba(239,68,68,.12); color: #ef4444; }
+  .popup-badge.alt { background: rgba(0,212,170,.1); color: var(--accent2); }
+  .popup-badge.comp { background: rgba(59,130,246,.1); color: var(--supplier); }
+
+  /* ── Pagination ─────────────────────────────── */
+  .pager {
+    display: flex; align-items: center; justify-content: center;
+    gap: 4px; margin-top: 14px; flex-wrap: wrap;
+  }
+  .pager button {
+    min-width: 32px; height: 30px;
+    padding: 0 8px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 6px; color: var(--text2);
+    font-size: 12px; font-family: 'Sora', sans-serif;
+    cursor: pointer; transition: all .15s;
+  }
+  .pager button:hover { border-color: var(--accent); color: var(--text); background: var(--surface2); }
+  .pager button.active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700; }
+  .pager button:disabled { opacity: .35; cursor: default; }
+  .pager .pager-info {
+    font-size: 11px; color: var(--text2); margin: 0 8px;
+  }
+
+  /* ── Ingredient Detail ──────────────────────── */
+  .ingr-detail {
+    margin-top: 20px;
+    animation: fadeIn .25s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  .detail-header {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 18px;
+  }
+  .detail-header h3 { font-size: 20px; }
+  .detail-header .sku-tag {
+    font-size: 11px; color: var(--text2);
+    background: var(--surface2); padding: 3px 10px;
+    border-radius: 12px; font-family: 'Space Grotesk', monospace;
+  }
+  .detail-columns {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 20px;
+  }
+  .supplier-list {
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .supplier-chip {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .supplier-chip .dot {
+    width: 8px; height: 8px; border-radius: 50%; background: var(--supplier);
+  }
+  .company-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  .company-card h4 {
+    font-size: 15px; margin-bottom: 10px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .company-card h4 .co-dot {
+    width: 10px; height: 10px; border-radius: 50%; background: var(--company);
+  }
+  .product-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 7px 12px;
+    margin: 3px 4px 3px 0;
+    font-size: 12px;
+    color: var(--text);
+  }
+  .product-chip .bom-tag {
+    font-size: 10px; color: var(--bom);
+    background: rgba(236,72,153,.12);
+    padding: 2px 6px; border-radius: 4px;
+  }
+
+  /* ── Component Table ───────────────────────── */
+  .comp-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+  }
+  .comp-table th, .comp-table td {
+    text-align: left;
+    padding: 10px 14px;
+    font-size: 13px;
+    border-bottom: 1px solid var(--border);
+  }
+  .comp-table th {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .8px;
+    color: var(--text2);
+    font-weight: 600;
+  }
+  .comp-table td { color: var(--text); }
+  .comp-table tr:hover td { background: var(--surface2); }
+  .supplier-bar {
+    display: inline-block;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--supplier);
+    min-width: 4px;
+    vertical-align: middle;
+    margin-left: 8px;
+  }
+
+  /* ── Table Explorer ────────────────────────── */
+  .table-tabs {
+    display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px;
+  }
+  .tab-btn {
+    padding: 6px 16px;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    background: transparent;
+    color: var(--text2);
+    font-family: 'Sora', sans-serif;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .tab-btn:hover { border-color: var(--accent); color: var(--text); }
+  .tab-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .raw-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  .raw-table th, .raw-table td {
+    text-align: left;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .raw-table th {
+    color: var(--text2);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    font-size: 11px;
+  }
+  .filter-row th { padding: 4px 6px; background: var(--surface2); }
+  .col-filter:focus { border-color: var(--accent) !important; }
+  .raw-table td { color: var(--text); font-family: 'Space Grotesk', monospace; }
+  .pagination {
+    display: flex; align-items: center; gap: 10px; margin-top: 10px; font-size: 13px; color: var(--text2);
+  }
+  .page-btn {
+    padding: 5px 14px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text);
+    font-family: 'Sora', sans-serif;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .page-btn:disabled { opacity: .3; cursor: not-allowed; }
+  .page-btn:hover:not(:disabled) { border-color: var(--accent); }
+
+  /* ── Sidebar Lists ─────────────────────────── */
+  .sidebar-section { margin-top: 8px; }
+  .sidebar-section h4 {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text2);
+    margin-bottom: 8px;
+  }
+  .bar-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 4px 0; font-size: 12px;
+  }
+  .bar-row .name { flex: 1; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bar-row .count { color: var(--text2); font-size: 11px; min-width: 24px; text-align: right; }
+  .bar-row .mini-bar {
+    height: 4px;
+    border-radius: 2px;
+    background: var(--accent);
+  }
+
+  /* ── Scrollbar ─────────────────────────────── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* ── Main Tabs ─────────────────────────────── */
+  .main-tabs {
+    display: flex; gap: 0; margin-bottom: 24px;
+    border-bottom: 2px solid var(--border);
+  }
+  .main-tab {
+    padding: 10px 24px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 14px; font-weight: 600;
+    background: transparent;
+    border: none;
+    color: var(--text2);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    transition: all .2s;
+  }
+  .main-tab:hover { color: var(--text); }
+  .main-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab-pane { display: none; }
+  .tab-pane.active { display: block; }
+
+  /* ── Graph ──────────────────────────────────── */
+  .graph-controls {
+    display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 14px;
+    align-items: end;
+  }
+  #graphContainer {
+    width: 100%;
+    height: 540px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .graph-legend {
+    display: flex; gap: 16px; margin-top: 10px; flex-wrap: wrap;
+  }
+  .legend-item {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 12px; color: var(--text2);
+  }
+  .legend-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+  }
+  .graph-comp-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 14px;
+  }
+  .graph-comp-table th, .graph-comp-table td {
+    text-align: left;
+    padding: 8px 12px;
+    font-size: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .graph-comp-table th {
+    font-size: 11px; text-transform: uppercase;
+    letter-spacing: .8px; color: var(--text2); font-weight: 600;
+  }
+  .graph-comp-table td { color: var(--text); }
+  .graph-comp-table tr:hover td { background: var(--surface2); }
+
+  /* ── Procurement / Cost Savings ────────────── */
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    text-align: center;
+  }
+  .stat-card .stat-value {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--accent2);
+  }
+  .stat-card .stat-label {
+    font-size: 11px;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    margin-top: 4px;
+  }
+  .savings-detail {
+    display: none;
+    padding: 12px 14px 14px;
+    background: var(--surface);
+    animation: fadeIn .2s ease;
+  }
+  .xt tr.xdetail.open .savings-detail { display: block; }
+  .score-bar {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 4px; font-size: 11px;
+  }
+  .score-bar .bar-label { width: 80px; color: var(--text2); }
+  .score-bar .bar-track {
+    flex: 1; max-width: 120px; height: 5px;
+    background: var(--surface2); border-radius: 3px; overflow: hidden;
+  }
+  .score-bar .bar-fill { height: 100%; border-radius: 3px; }
+  .sup-rank-table {
+    width: 100%; border-collapse: collapse; font-size: 12px;
+  }
+  .sup-rank-table th, .sup-rank-table td {
+    padding: 8px 10px; text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  .sup-rank-table th {
+    font-size: 10px; text-transform: uppercase;
+    letter-spacing: .6px; color: var(--text2); font-weight: 600;
+  }
+  .sup-rank-table tr:hover td { background: var(--surface2); }
+
+  /* ── Loading ───────────────────────────────── */
+  .loading {
+    display: flex; align-items: center; justify-content: center;
+    height: 200px; color: var(--text2); font-size: 14px;
+  }
+
+  /* ── Filter Bar ─────────────────────────────── */
+  .filter-bar {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 16px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 10px;
+    margin-bottom: 14px; flex-wrap: wrap;
+  }
+  .filter-bar .fi {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 12px; color: var(--text2); white-space: nowrap;
+  }
+  .filter-bar .fi select {
+    padding: 5px 28px 5px 8px; font-size: 12px; border-radius: 6px;
+  }
+  .filter-bar .sep {
+    width: 1px; height: 22px; background: var(--border); flex-shrink: 0;
+  }
+  .pill-toggle {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 5px 12px; border-radius: 16px;
+    border: 1px solid var(--border); background: transparent;
+    color: var(--text2); font-size: 11px; font-weight: 600;
+    cursor: pointer; transition: all .2s;
+    font-family: 'Sora', sans-serif;
+  }
+  .pill-toggle:hover { border-color: var(--accent); color: var(--text); }
+  .pill-toggle.active { background: rgba(239,68,68,.12); border-color: var(--danger); color: var(--danger); }
+  .filter-bar .rc {
+    margin-left: auto; font-size: 11px; color: var(--text2); font-weight: 500;
+  }
+
+  /* ── Compact Chip Layouts ───────────────────── */
+  .chip-wrap { display: flex; flex-wrap: wrap; gap: 6px; align-items: flex-start; }
+  .co-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 8px;
+    font-size: 12px; cursor: pointer; transition: all .15s; max-width: 220px;
+  }
+  .co-chip:hover { border-color: var(--accent); background: var(--surface2); }
+  .co-chip.active { border-color: var(--accent); background: var(--surface2); }
+  .co-chip.single-src { border-color: rgba(239,68,68,.35); }
+  .co-chip .cd { width: 7px; height: 7px; border-radius: 50%; background: var(--company); flex-shrink: 0; }
+  .co-chip .cn { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .co-chip .cc {
+    font-size: 10px; color: var(--text2); background: var(--surface2);
+    padding: 1px 6px; border-radius: 4px; flex-shrink: 0;
+  }
+  .co-chip.co-hidden { display: none !important; }
+  .show-more-btn {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 6px 14px; border-radius: 8px;
+    border: 1px dashed var(--border); background: transparent;
+    color: var(--accent); font-size: 11px; font-weight: 600;
+    cursor: pointer; font-family: 'Sora', sans-serif; transition: all .2s;
+  }
+  .show-more-btn:hover { border-color: var(--accent); background: rgba(108,99,255,.06); }
+
+  /* ── Supplier compact row ───────────────────── */
+  .sup-compact {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 14px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 8px;
+    font-size: 13px; transition: border-color .2s;
+  }
+  .sup-compact:hover { border-color: var(--accent); }
+  .sup-compact .sd { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .sup-compact .sn { font-weight: 600; }
+  .sup-compact .sa { margin-left: auto; display: flex; gap: 6px; align-items: center; }
+  .btn-xs {
+    padding: 3px 10px; border-radius: 5px;
+    border: 1px solid var(--border); background: transparent;
+    font-size: 10px; font-weight: 600; cursor: pointer;
+    font-family: 'Sora', sans-serif; transition: all .15s; color: var(--text2);
+  }
+  .btn-xs:hover { border-color: var(--accent); color: var(--text); }
+  .btn-xs.link { color: var(--supplier); border-color: rgba(59,130,246,.3); }
+  .btn-xs.link:hover { background: rgba(59,130,246,.08); border-color: var(--supplier); }
+  .sup-detail-panel {
+    display: none; padding: 10px 14px; margin-top: 4px;
+    background: var(--surface2); border-radius: 8px;
+    font-size: 12px; animation: fadeIn .2s ease;
+  }
+  .sup-detail-panel.open { display: block; }
+
+  /* ── Company expanded detail (inline) ────────── */
+  .co-expand {
+    width: 100%; background: var(--surface2);
+    border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px 14px; margin-top: 6px; animation: fadeIn .2s ease;
+  }
+
+  /* ── Supplier body show-more helpers ─────────── */
+  .ing-hidden { display: none !important; }
+  .co-in-hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="topnav">
+  <div class="logo">Agnes<span>TheSecond</span></div>
+  <a href="/">Chat</a>
+  <a href="/cube/">Cube</a>
+  <a href="/explorer/" class="active">Explorer</a>
+  <a href="/agnes/">Insights</a>
+  <a href="/sourcing/">Sourcing</a>
+</div>
+<div class="app">
+  <!-- ── Sidebar Overlay + Drawer ────────────────── -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+  <aside class="sidebar" id="sidebar">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+      <span style="font-size:13px;font-weight:700;font-family:'Space Grotesk',sans-serif;color:var(--text);">📊 Network Overview</span>
+      <button class="sidebar-close" id="sidebarClose" title="Close panel">✕</button>
+    </div>
+
+    <div class="sidebar-section" id="topCompaniesSection">
+      <h4>Top Companies</h4>
+      <div id="topCompanies"></div>
+    </div>
+
+    <div class="sidebar-section" id="topSuppliersSection">
+      <h4>Top Suppliers</h4>
+      <div id="topSuppliers"></div>
+    </div>
+  </aside>
+
+  <!-- ── Main Content ───────────────────────────── -->
+  <div class="main">
+    <!-- Main Tabs -->
+    <button class="sidebar-toggle" id="sidebarToggle" title="Network overview">
+      <span class="arrow">&#9654;</span><span class="label">Overview</span>
+    </button>
+    <div>
+      <div class="main-tabs">
+        <button class="main-tab active" data-pane="ingredientPane">Ingredients</button>
+        <button class="main-tab" data-pane="supplierPane">Suppliers</button>
+        <button class="main-tab" data-pane="graphPane">Graph</button>
+        <button class="main-tab" data-pane="procurementPane">Procurement</button>
+        <button class="main-tab" data-pane="tablePane">Tables</button>
+      </div>
+    </div>
+
+    <!-- Ingredient Pane -->
+    <div class="tab-pane active" id="ingredientPane">
+    <div class="section">
+      <div class="section-header">Ingredient Explorer</div>
+      <p style="color:var(--text2);font-size:13px;margin-bottom:12px;">Ingredients grouped by name across all companies — same ingredient from different suppliers is merged. Click to expand.</p>
+      <div style="margin-bottom:10px;">
+        <input type="text" id="ingrSearch" placeholder="Search ingredients…" style="width:100%;padding:9px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:'Sora',sans-serif;outline:none;transition:border-color .2s;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+      </div>
+      <div class="filter-bar">
+        <span class="fi">🔗 Suppliers <select id="minSupplierSelect">
+            <option value="1">≥ 1</option>
+            <option value="2" selected>≥ 2</option>
+            <option value="3">≥ 3</option>
+            <option value="4">≥ 4</option>
+            <option value="5">≥ 5</option>
+          </select></span>
+        <span class="fi">🏢 Companies <select id="minCompanySelect">
+            <option value="1">≥ 1</option>
+            <option value="2" selected>≥ 2</option>
+            <option value="3">≥ 3</option>
+            <option value="5">≥ 5</option>
+            <option value="10">≥ 10</option>
+          </select></span>
+        <div class="sep"></div>
+        <button class="pill-toggle" id="singleSourceToggle" title="Show ingredients where at least one product has only 1 linked supplier">⚠ Single-source</button>
+        <div class="sep"></div>
+        <span class="fi">↕ <select id="ingrSortSelect">
+            <option value="companies-desc" selected>Most companies</option>
+            <option value="suppliers-desc">Most suppliers</option>
+            <option value="name-asc">Name A–Z</option>
+            <option value="name-desc">Name Z–A</option>
+            <option value="companies-asc">Fewest companies</option>
+            <option value="suppliers-asc">Fewest suppliers</option>
+          </select></span>
+        <span class="rc" id="ingrCount"></span>
+      </div>
+      <div id="ingrList"><div class="loading">Loading ingredients…</div></div>
+      <div class="pager" id="ingrPager"></div>
+    </div>
+    </div><!-- /ingredientPane -->
+
+    <!-- Supplier Pane -->
+    <div class="tab-pane" id="supplierPane">
+    <div class="section">
+      <div class="section-header">Supplier Explorer</div>
+      <p style="color:var(--text2);font-size:13px;margin-bottom:12px;">Browse suppliers and explore which ingredients they provide, to which companies. Click a supplier to see full details.</p>
+      <div style="margin-bottom:10px;">
+        <input type="text" id="supSearch" placeholder="Search suppliers…" style="width:100%;padding:9px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:'Sora',sans-serif;outline:none;transition:border-color .2s;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+      </div>
+      <div class="filter-bar">
+        <span class="fi">🧪 Ingredients <select id="supMinIngredients">
+            <option value="1" selected>≥ 1</option>
+            <option value="5">≥ 5</option>
+            <option value="10">≥ 10</option>
+            <option value="20">≥ 20</option>
+          </select></span>
+        <span class="fi">🏢 Companies <select id="supMinCompanies">
+            <option value="1" selected>≥ 1</option>
+            <option value="5">≥ 5</option>
+            <option value="10">≥ 10</option>
+            <option value="20">≥ 20</option>
+          </select></span>
+        <div class="sep"></div>
+        <button class="pill-toggle" id="supSoleToggle" title="Only show suppliers that are the sole supplier for at least one product">⚠ Sole supplier</button>
+        <div class="sep"></div>
+        <span class="fi">↕ <select id="supSortSelect">
+            <option value="companies-desc" selected>Most companies</option>
+            <option value="ingredients-desc">Most ingredients</option>
+            <option value="products-desc">Most products</option>
+            <option value="name-asc">Name A–Z</option>
+            <option value="name-desc">Name Z–A</option>
+            <option value="companies-asc">Fewest companies</option>
+            <option value="ingredients-asc">Fewest ingredients</option>
+          </select></span>
+        <span class="rc" id="supCount"></span>
+      </div>
+      <div id="supList"><div class="loading">Loading suppliers…</div></div>
+      <div class="pager" id="supPager"></div>
+    </div>
+    </div><!-- /supplierPane -->
+
+    <!-- Graph Pane -->
+    <div class="tab-pane" id="graphPane">
+    <div class="section">
+      <div class="section-header">Product Supply Graph</div>
+      <p style="color:var(--text2);font-size:13px;margin-bottom:14px;">Select a company and product to see its BOM, components, and supplier network.</p>
+      <div class="graph-controls">
+        <div class="control-group">
+          <label>Company</label>
+          <select id="companySelect"><option value="">All Companies</option></select>
+        </div>
+        <div class="control-group">
+          <label>Finished Good</label>
+          <select id="productSelect"><option value="">First available</option></select>
+        </div>
+      </div>
+      <div id="focusLabel" style="font-size:13px;color:var(--text2);margin-bottom:8px;"></div>
+      <div id="graphContainer"></div>
+      <div class="graph-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--company)"></div>Company</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--product)"></div>Product</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--bom)"></div>BOM</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--component)"></div>Component</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--supplier)"></div>Supplier</div>
+      </div>
+      <div id="graphCompTable"></div>
+    </div>
+    </div><!-- /graphPane -->
+
+    <!-- Procurement Pane -->
+    <div class="tab-pane" id="procurementPane">
+      <div id="procStats"><div class="loading">Loading procurement data…</div></div>
+      <div class="section" style="margin-top:0;">
+        <div class="section-header">Top Cost-Saving Opportunities</div>
+        <p style="color:var(--text2);font-size:13px;margin-bottom:12px;">Ingredients ranked by potential savings if volume shifts to the cheapest qualified supplier. Click to expand supplier comparison.</p>
+        <div style="margin-bottom:10px;">
+          <input type="text" id="savingsSearch" placeholder="Search ingredients…" style="width:100%;padding:9px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:'Sora',sans-serif;outline:none;transition:border-color .2s;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+        </div>
+        <div class="ingr-controls" style="margin-bottom:12px;">
+          <div class="control-group">
+            <label>Min savings</label>
+            <select id="minSavingsSelect">
+              <option value="0" selected>Any</option>
+              <option value="1000">≥ $1K</option>
+              <option value="10000">≥ $10K</option>
+              <option value="100000">≥ $100K</option>
+              <option value="1000000">≥ $1M</option>
+            </select>
+          </div>
+          <div class="control-group">
+            <label>Min spread</label>
+            <select id="minSpreadSelect">
+              <option value="0" selected>Any</option>
+              <option value="5">≥ 5%</option>
+              <option value="10">≥ 10%</option>
+              <option value="15">≥ 15%</option>
+              <option value="25">≥ 25%</option>
+            </select>
+          </div>
+          <div class="control-group">
+            <label>Sort by</label>
+            <select id="savingsSortSelect">
+              <option value="savings-desc" selected>Most savings</option>
+              <option value="spread-desc">Biggest spread</option>
+              <option value="spend-desc">Most spend</option>
+              <option value="name-asc">Name A–Z</option>
+            </select>
+          </div>
+          <span id="savingsCount" style="font-size:12px;color:var(--text2);align-self:end;padding-bottom:10px;"></span>
+        </div>
+        <div id="savingsList"></div>
+        <div class="pager" id="savingsPager"></div>
+      </div>
+      <div class="section">
+        <div class="section-header">Supplier Rankings</div>
+        <p style="color:var(--text2);font-size:13px;margin-bottom:12px;">All suppliers ranked by total procurement spend, with quality and delivery metrics.</p>
+        <div id="supplierRankings"><div class="loading">Loading…</div></div>
+      </div>
+    </div><!-- /procurementPane -->
+
+    <!-- Table Pane -->
+    <div class="tab-pane" id="tablePane">
+    <div class="section">
+      <div class="section-header">Table Explorer</div>
+      <div class="table-tabs" id="tableTabs"></div>
+      <div id="tableContent"><div class="loading">Select a table above</div></div>
+    </div>
+    </div><!-- /tablePane -->
+  </div>
+</div>
+
+<script>
+const API = '/explorer';
+const state = { explorerTable: null, explorerOffset: 0, selectedIngredient: null, companyId: null, productId: null, graphLoaded: false, suppliersLoaded: false, procurementLoaded: false, optionsData: null };
+const nodeColorMap = {
+  company: '#f59e0b', product: '#6c63ff', bom: '#ec4899',
+  component: '#00d4aa', supplier: '#3b82f6',
+};
+
+// ── Helpers ──────────────────────────────────
+function $(sel) { return document.querySelector(sel); }
+function $$(sel) { return document.querySelectorAll(sel); }
+
+async function api(path) {
+  const res = await fetch(API + path);
+  if (!res.ok) throw new Error(`API ${path}: ${res.status}`);
+  return res.json();
+}
+
+// ── Init ─────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+  // ── Sidebar toggle ──
+  const sidebar = $('#sidebar');
+  const overlay = $('#sidebarOverlay');
+  const toggleBtn = $('#sidebarToggle');
+  const closeBtn = $('#sidebarClose');
+  function openSidebar()  { sidebar.classList.add('open'); overlay.classList.add('show'); toggleBtn.classList.add('active'); }
+  function closeSidebar() { sidebar.classList.remove('open'); overlay.classList.remove('show'); toggleBtn.classList.remove('active'); }
+  toggleBtn.addEventListener('click', () => sidebar.classList.contains('open') ? closeSidebar() : openSidebar());
+  closeBtn.addEventListener('click', closeSidebar);
+  overlay.addEventListener('click', closeSidebar);
+
+  await Promise.all([loadSidebar(), loadIngredients()]);
+  loadTableList();
+
+  $('#minSupplierSelect').addEventListener('change', () => loadIngredients());
+  $('#minCompanySelect').addEventListener('change', () => loadIngredients());
+  $('#singleSourceToggle').addEventListener('click', () => {
+    $('#singleSourceToggle').classList.toggle('active');
+    if ($('#singleSourceToggle').classList.contains('active')) {
+      $('#minSupplierSelect').value = '1';
+    }
+    loadIngredients();
+  });
+  $('#ingrSortSelect').addEventListener('change', () => renderIngredientList());
+  let ingrSearchTimer;
+  $('#ingrSearch').addEventListener('input', () => {
+    clearTimeout(ingrSearchTimer);
+    ingrSearchTimer = setTimeout(() => loadIngredients(), 200);
+  });
+
+  // Main tabs
+  $$('.main-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      $$('.main-tab').forEach(t => t.classList.remove('active'));
+      $$('.tab-pane').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      const pane = $('#' + tab.dataset.pane);
+      if (pane) pane.classList.add('active');
+      // Lazy-load graph on first visit
+      if (tab.dataset.pane === 'graphPane' && !state.graphLoaded) {
+        state.graphLoaded = true;
+        loadGraphOptions();
+      }
+      // Lazy-load suppliers on first visit
+      if (tab.dataset.pane === 'supplierPane' && !state.suppliersLoaded) {
+        state.suppliersLoaded = true;
+        loadSuppliers();
+      }
+      // Lazy-load procurement on first visit
+      if (tab.dataset.pane === 'procurementPane' && !state.procurementLoaded) {
+        state.procurementLoaded = true;
+        loadProcurement();
+      }
+    });
+  });
+
+  // Supplier controls
+  $('#supMinIngredients').addEventListener('change', () => loadSuppliers());
+  $('#supMinCompanies').addEventListener('change', () => loadSuppliers());
+  $('#supSoleToggle').addEventListener('click', () => { $('#supSoleToggle').classList.toggle('active'); loadSuppliers(); });
+  $('#supSortSelect').addEventListener('change', () => renderSupplierList());
+  let supSearchTimer;
+  $('#supSearch').addEventListener('input', () => {
+    clearTimeout(supSearchTimer);
+    supSearchTimer = setTimeout(() => loadSuppliers(), 200);
+  });
+
+  // ── Deep-link via URL params: ?tab=suppliers&search=Name ──
+  const urlParams = new URLSearchParams(window.location.search);
+  const tabParam = urlParams.get('tab');
+  const searchParam = urlParams.get('search');
+  if (tabParam === 'suppliers') {
+    navigateToSupplier(searchParam || '');
+  } else if (tabParam === 'ingredients') {
+    if (searchParam) {
+      $('#ingrSearch').value = searchParam;
+      loadIngredients();
+    }
+  }
+});
+
+// ── Sidebar ──────────────────────────────────
+async function loadSidebar() {
+  const data = await api('/api/overview');
+
+  // Sidebar: top companies
+  const maxComp = Math.max(...data.top_companies.map(r => r.finished_good_count), 1);
+  $('#topCompanies').innerHTML = data.top_companies.map(r =>
+    `<div class="bar-row">
+      <span class="name" title="${r.Name}">${r.Name}</span>
+      <span class="count">${r.finished_good_count}</span>
+      <div class="mini-bar" style="width:${Math.round(r.finished_good_count / maxComp * 60)}px"></div>
+    </div>`
+  ).join('');
+
+  // Sidebar: top suppliers
+  const maxSup = Math.max(...data.top_suppliers.map(r => r.raw_material_count), 1);
+  $('#topSuppliers').innerHTML = data.top_suppliers.map(r =>
+    `<div class="bar-row">
+      <span class="name" title="${r.Name}">${r.Name}</span>
+      <span class="count">${r.raw_material_count}</span>
+      <div class="mini-bar" style="width:${Math.round(r.raw_material_count / maxSup * 60)}px;background:var(--supplier)"></div>
+    </div>`
+  ).join('');
+}
+
+// ── Ingredient Explorer ──────────────────────
+const ingredientCache = {};
+let currentIngredientList = [];
+let ingrPage = 1;
+
+// ── Pagination helper ──────────────────────
+const PAGE_SIZE = 50;
+function renderPager(containerId, totalItems, currentPage, onPageChange) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  const totalPages = Math.ceil(totalItems / PAGE_SIZE);
+  if (totalPages <= 1) { el.innerHTML = ''; return; }
+  const from = (currentPage - 1) * PAGE_SIZE + 1;
+  const to = Math.min(currentPage * PAGE_SIZE, totalItems);
+  let html = '';
+  html += `<button data-p="${currentPage - 1}" ${currentPage === 1 ? 'disabled' : ''}>&lsaquo;</button>`;
+  // smart page range
+  const pages = [];
+  pages.push(1);
+  if (currentPage > 3) pages.push('…');
+  for (let p = Math.max(2, currentPage - 1); p <= Math.min(totalPages - 1, currentPage + 1); p++) pages.push(p);
+  if (currentPage < totalPages - 2) pages.push('…');
+  if (totalPages > 1) pages.push(totalPages);
+  pages.forEach(p => {
+    if (p === '…') { html += `<span style="color:var(--text2);font-size:11px;">…</span>`; return; }
+    html += `<button data-p="${p}" class="${p === currentPage ? 'active' : ''}">${p}</button>`;
+  });
+  html += `<button data-p="${currentPage + 1}" ${currentPage === totalPages ? 'disabled' : ''}>&rsaquo;</button>`;
+  html += `<span class="pager-info">${from}–${to} of ${totalItems}</span>`;
+  el.innerHTML = html;
+  el.querySelectorAll('button[data-p]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const p = parseInt(btn.dataset.p);
+      if (p >= 1 && p <= totalPages) onPageChange(p);
+    });
+  });
+}
+
+let allIngredientList = null; // full unfiltered cache
+async function loadIngredients() {
+  const q = ($('#ingrSearch').value || '').trim();
+  if (q) {
+    // When searching, load ALL ingredients once and filter client-side
+    if (!allIngredientList) {
+      const data = await api('/api/ingredients?minSuppliers=1&minCompanies=1');
+      allIngredientList = data.ingredients;
+    }
+    currentIngredientList = allIngredientList;
+  } else {
+    const minSup = $('#minSupplierSelect').value;
+    const minCo = $('#minCompanySelect').value;
+    const ss = $('#singleSourceToggle').classList.contains('active') ? '1' : '0';
+    const data = await api(`/api/ingredients?minSuppliers=${minSup}&minCompanies=${minCo}&singleSource=${ss}`);
+    currentIngredientList = data.ingredients;
+  }
+  renderIngredientList(true);
+}
+
+function renderIngredientList(resetPage) {
+  if (resetPage) ingrPage = 1;
+  const sort = $('#ingrSortSelect').value;
+  const q = ($('#ingrSearch').value || '').toLowerCase();
+  let list = [...currentIngredientList];
+  if (q) list = list.filter(ing => ing.name.toLowerCase().includes(q) || ing.baseName.toLowerCase().includes(q));
+
+  const [field, dir] = sort.split('-');
+  list.sort((a, b) => {
+    let cmp = 0;
+    if (field === 'name') cmp = a.name.localeCompare(b.name);
+    else if (field === 'companies') cmp = a.companyCount - b.companyCount;
+    else if (field === 'suppliers') cmp = a.supplierCount - b.supplierCount;
+    return dir === 'desc' ? -cmp : cmp;
+  });
+
+  $('#ingrCount').textContent = `${list.length} ingredient${list.length !== 1 ? 's' : ''}`;
+
+  if (list.length === 0) {
+    $('#ingrList').innerHTML = '<div style="color:var(--text2);padding:20px;">No ingredients match these filters.</div>';
+    $('#ingrPager').innerHTML = '';
+    return;
+  }
+
+  const totalPages = Math.ceil(list.length / PAGE_SIZE);
+  if (ingrPage > totalPages) ingrPage = totalPages;
+  const pageList = list.slice((ingrPage - 1) * PAGE_SIZE, ingrPage * PAGE_SIZE);
+
+  let html = `<table class="xt"><thead><tr>
+    <th>Ingredient</th>
+    <th style="text-align:right;">Suppliers</th>
+    <th style="text-align:right;">Companies</th>
+    <th style="text-align:right;">Single-src</th>
+  </tr></thead><tbody>`;
+  pageList.forEach(ing => {
+    const ss = ing.singleSourceProducts || 0;
+    html += `<tr class="xr" data-base="${esc(ing.baseName)}" style="cursor:pointer;">
+      <td class="xname">${esc(ing.name)}</td>
+      <td class="xnum" style="color:var(--supplier);">${ing.supplierCount}</td>
+      <td class="xnum" style="color:var(--company);">${ing.companyCount}</td>
+      <td class="xnum">${ss > 0 ? `<span class="xwarn">⚠ ${ss}</span>` : '<span style="color:var(--text2);">—</span>'}</td>
+    </tr>`;
+  });
+  html += `</tbody></table>`;
+  $('#ingrList').innerHTML = html;
+
+  renderPager('ingrPager', list.length, ingrPage, p => { ingrPage = p; renderIngredientList(); $('#ingrList').scrollIntoView({behavior:'smooth',block:'start'}); });
+
+  // Row click → open popup with card content
+  $$('#ingredientPane .xr').forEach(row => {
+    row.addEventListener('click', () => {
+      const base = row.dataset.base;
+      openIngredientDetailPopup(base, row.querySelector('.xname').textContent);
+    });
+  });
+}
+
+async function loadIngredientCard(card) {
+  const baseName = card.dataset.base;
+  const body = card.querySelector('.ingr-card-body');
+
+  // Check cache
+  if (ingredientCache[baseName]) {
+    renderIngredientBody(body, ingredientCache[baseName]);
+    return;
+  }
+
+  body.innerHTML = '<div class="ingr-loading">Loading details…</div>';
+  const data = await api(`/api/ingredient/${encodeURIComponent(baseName)}`);
+  ingredientCache[baseName] = data;
+  renderIngredientBody(body, data);
+}
+
+const SUPPLIER_COLORS = [
+  '#3b82f6','#f59e0b','#ec4899','#22c55e','#a855f7',
+  '#ef4444','#06b6d4','#f97316','#84cc16','#e879f9',
+  '#14b8a6','#fb923c','#8b5cf6','#facc15','#f43f5e',
+];
+
+function renderIngredientBody(body, data, sortBy) {
+  const ing = data.ingredient;
+  const suppliers = data.suppliers;
+  const companies = [...data.companies];
+  const totalProducts = companies.reduce((s, c) => s + c.products.length, 0);
+
+  // Build supplier -> color map
+  const supColor = {};
+  suppliers.forEach((s, i) => { supColor[s.Id] = SUPPLIER_COLORS[i % SUPPLIER_COLORS.length]; });
+
+  // Collect unique supplier sets per company (from product-level data)
+  companies.forEach(c => {
+    const supMap = {};
+    c.products.forEach(p => {
+      (p.suppliers || []).forEach(s => { supMap[s.id] = s.name; });
+    });
+    c._suppliers = Object.entries(supMap).map(([id, name]) => ({ id: +id, name }));
+    c._suppliers.sort((a, b) => a.name.localeCompare(b.name));
+  });
+
+  // Sort companies
+  sortBy = sortBy || 'products-desc';
+  const [sf, sd] = sortBy.split('-');
+  companies.sort((a, b) => {
+    let cmp = 0;
+    if (sf === 'products') cmp = a.products.length - b.products.length;
+    else if (sf === 'name') cmp = a.name.localeCompare(b.name);
+    return sd === 'desc' ? -cmp : cmp;
+  });
+
+  let html = '';
+
+  // Summary row
+  html += `<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;">`;
+  if (ing.variantCount > 1) {
+    html += `<div class="insight-chip"><strong>${ing.variantCount}</strong> variant SKUs across companies (same ingredient)</div>`;
+  }
+  html += `<div class="insight-chip"><strong>${suppliers.length}</strong> available supplier${suppliers.length !== 1 ? 's' : ''}</div>`;
+  html += `<div class="insight-chip">Used in <strong>${totalProducts}</strong> product${totalProducts !== 1 ? 's' : ''} across <strong>${companies.length}</strong> company${companies.length !== 1 ? 'ies' : ''}</div>`;
+  // Count products using only 1 of multiple available suppliers
+  let singleSourceProdCount = 0;
+  if (suppliers.length > 1) {
+    companies.forEach(c => c.products.forEach(p => { if ((p.suppliers || []).length === 1) singleSourceProdCount++; }));
+  }
+  if (singleSourceProdCount > 0) {
+    html += `<div class="insight-chip" style="border-color:var(--danger);\"><strong style="color:var(--danger);">${singleSourceProdCount}</strong> product${singleSourceProdCount !== 1 ? 's' : ''} using only 1 of ${suppliers.length} available suppliers</div>`;
+  }
+  html += `</div>`;
+
+  // Price benchmark
+  const benchmark = data.benchmark;
+  if (benchmark) {
+    html += `<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:14px;">`;
+    html += `<h4 style="font-size:12px;color:var(--text2);margin-bottom:8px;">MARKET PRICING</h4>`;
+    html += `<div style="display:flex;gap:16px;flex-wrap:wrap;font-size:13px;">`;
+    html += `<span>Avg: <strong style="color:var(--accent2);">$${benchmark.avgMarketPrice.toFixed(2)}/kg</strong></span>`;
+    html += `<span style="color:var(--text2);">Range: $${benchmark.minPrice.toFixed(2)} – $${benchmark.maxPrice.toFixed(2)}</span>`;
+    const volPct = (benchmark.priceVolatility * 100).toFixed(0);
+    const volCol = benchmark.priceVolatility > 0.2 ? 'var(--danger)' : benchmark.priceVolatility > 0.12 ? 'var(--accent3)' : 'var(--success)';
+    html += `<span>Volatility: <strong style="color:${volCol};">${volPct}%</strong></span>`;
+    html += `</div></div>`;
+  }
+
+  // Suppliers — compact rows with expandable details
+  html += `<div style="margin-bottom:14px;">`;
+  html += `<h4 style="font-size:12px;color:var(--text2);margin-bottom:8px;">SUPPLIERS</h4>`;
+  html += `<div style="display:flex;flex-direction:column;gap:6px;">`;
+  suppliers.forEach((s, si) => {
+    const col = supColor[s.Id];
+    const r = s.rating;
+    const p = s.procurement;
+    const riskHtml = r && r.riskTier ? (() => {
+      const rc = r.riskTier === 'low' ? 'var(--success)' : r.riskTier === 'high' ? 'var(--danger)' : 'var(--company)';
+      return `<span style="font-size:9px;padding:2px 6px;border-radius:3px;background:${rc}22;color:${rc};font-weight:600;text-transform:uppercase;">${r.riskTier}</span>`;
+    })() : '';
+    const priceHtml = p ? `<span style="font-size:11px;color:var(--text2);">$${p.avgPrice}/kg</span>` : '';
+    html += `<div>`;
+    html += `<div class="sup-compact">`;
+    html += `<span class="sd" style="background:${col};"></span>`;
+    html += `<span class="sn">${esc(s.Name)}</span>`;
+    html += riskHtml;
+    html += priceHtml;
+    html += `<span class="sa">`;
+    html += `<button class="btn-xs sup-toggle">Details ▸</button>`;
+    html += `<button class="btn-xs link sup-nav" data-sup-name="${esc(s.Name)}">View in Suppliers →</button>`;
+    html += `</span>`;
+    html += `</div>`;
+    // Expandable detail panel
+    html += `<div class="sup-detail-panel">`;
+    if (r) {
+      html += `<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:6px;">`;
+      const qCol = r.qualityScore >= 85 ? 'var(--success)' : r.qualityScore >= 70 ? 'var(--company)' : 'var(--danger)';
+      html += `<span>Quality: <strong style="color:${qCol};">${r.qualityScore.toFixed(0)}</strong>/100</span>`;
+      const cCol = r.complianceScore >= 85 ? 'var(--success)' : r.complianceScore >= 70 ? 'var(--company)' : 'var(--danger)';
+      html += `<span>Compliance: <strong style="color:${cCol};">${r.complianceScore.toFixed(0)}</strong>/100</span>`;
+      const relCol = r.reliabilityScore >= 85 ? 'var(--success)' : r.reliabilityScore >= 70 ? 'var(--company)' : 'var(--danger)';
+      html += `<span>Reliability: <strong style="color:${relCol};">${r.reliabilityScore.toFixed(0)}</strong>/100</span>`;
+      html += `</div>`;
+      if (r.certifications && r.certifications.length && r.certifications[0]) {
+        html += `<div style="display:flex;gap:3px;flex-wrap:wrap;margin-bottom:6px;">`;
+        r.certifications.forEach(c => {
+          html += `<span style="font-size:9px;padding:1px 6px;border-radius:3px;background:rgba(0,212,170,.1);color:var(--accent2);border:1px solid rgba(0,212,170,.2);">${esc(c)}</span>`;
+        });
+        html += `</div>`;
+      }
+    }
+    if (p) {
+      html += `<div style="font-size:11px;color:var(--text2);">`;
+      html += `Avg $${p.avgPrice}/kg · ${p.orderCount} orders · $${Number(p.totalSpend).toLocaleString()} total`;
+      if (p.onTimeRate != null) html += ` · ${p.onTimeRate}% on-time`;
+      html += `</div>`;
+    }
+    html += `</div>`;
+    html += `</div>`;
+  });
+  html += `</div></div>`;
+
+  // Sort control + Companies header
+  html += `<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">`;
+  html += `<h4 style="font-size:12px;color:var(--text2);margin:0;">COMPANIES USING THIS INGREDIENT (${companies.length})</h4>`;
+  html += `<select class="detail-sort" style="margin-left:auto;font-size:11px;padding:4px 8px;">`;
+  html += `<option value="products-desc"${sortBy === 'products-desc' ? ' selected' : ''}>Most products</option>`;
+  html += `<option value="products-asc"${sortBy === 'products-asc' ? ' selected' : ''}>Fewest products</option>`;
+  html += `<option value="name-asc"${sortBy === 'name-asc' ? ' selected' : ''}>Name A–Z</option>`;
+  html += `<option value="name-desc"${sortBy === 'name-desc' ? ' selected' : ''}>Name Z–A</option>`;
+  html += `</select></div>`;
+
+  // Companies — compact chip grid with expand-on-click
+  const MAX_VISIBLE_CO = 6;
+  const allSupIds = new Set(suppliers.map(s => s.Id));
+  html += `<div class="chip-wrap">`;
+  companies.forEach((c, ci) => {
+    const singleSrcProducts = c.products.filter(p => {
+      const pSupCount = (p.suppliers || []).length;
+      return pSupCount === 1 && allSupIds.size > 1;
+    });
+    const hasSingleSrc = singleSrcProducts.length > 0;
+    const hideClass = ci >= MAX_VISIBLE_CO ? ' co-hidden' : '';
+    html += `<div class="co-chip${hasSingleSrc ? ' single-src' : ''}${hideClass}" data-co-idx="${ci}">`;
+    html += `<span class="cd"></span>`;
+    html += `<span class="cn">${esc(c.name)}</span>`;
+    html += `<span class="cc">${c.products.length}</span>`;
+    if (hasSingleSrc) html += `<span style="font-size:9px;color:var(--danger);font-weight:700;">⚠</span>`;
+    html += `</div>`;
+  });
+  if (companies.length > MAX_VISIBLE_CO) {
+    html += `<button class="show-more-btn co-show-more">+${companies.length - MAX_VISIBLE_CO} more</button>`;
+  }
+  html += `</div>`;
+
+  // Hidden company detail panels (shown on chip click)
+  companies.forEach((c, ci) => {
+    const singleSrcProducts = c.products.filter(p => {
+      const pSupCount = (p.suppliers || []).length;
+      return pSupCount === 1 && allSupIds.size > 1;
+    });
+    const hasSingleSrc = singleSrcProducts.length > 0;
+    html += `<div class="co-expand" data-co-detail="${ci}" style="display:none;">`;
+    html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">`;
+    html += `<span class="co-dot"></span><strong>${esc(c.name)}</strong>`;
+    c._suppliers.forEach(s => {
+      const col = supColor[s.id] || '#888';
+      html += `<span title="${esc(s.name)}" style="width:8px;height:8px;border-radius:50%;background:${col};display:inline-block;"></span>`;
+    });
+    if (hasSingleSrc) {
+      html += `<span style="font-size:10px;color:var(--danger);margin-left:4px;font-weight:600;">${singleSrcProducts.length} SINGLE-SOURCE</span>`;
+    }
+    html += `<span style="margin-left:auto;font-size:11px;color:var(--text2);">${c.products.length} product${c.products.length !== 1 ? 's' : ''}</span>`;
+    html += `</div>`;
+    html += `<div style="display:flex;flex-wrap:wrap;gap:6px;">`;
+    c.products.forEach(p => {
+      const pSupIds = new Set((p.suppliers || []).map(s => s.id));
+      const usingCount = pSupIds.size;
+      const totalCount = suppliers.length;
+      const isSingleSrc = usingCount === 1 && totalCount > 1;
+      html += `<div class="product-chip" style="flex-direction:column;align-items:flex-start;gap:4px;${isSingleSrc ? 'border-color:rgba(239,68,68,.35);' : ''}">`;
+      html += `<div style="display:flex;align-items:center;gap:6px;">${esc(p.productName)} <span class="bom-tag">BOM #${p.bomId}</span>`;
+      if (isSingleSrc) {
+        html += `<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:rgba(239,68,68,.15);color:#ef4444;font-weight:600;">⚠ SINGLE SOURCE</span>`;
+      }
+      html += `</div>`;
+      html += `<div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;">`;
+      html += `<span style="font-size:10px;color:var(--text2);margin-right:2px;">Linked:</span>`;
+      suppliers.forEach(s => {
+        const col = supColor[s.Id] || '#888';
+        const linked = pSupIds.has(s.Id);
+        if (linked) {
+          html += `<span style="font-size:10px;padding:2px 8px;border-radius:4px;background:${col}22;color:${col};border:1px solid ${col}44;font-weight:600;">${esc(s.Name)}</span>`;
+        }
+      });
+      html += `</div>`;
+      const unlinked = suppliers.filter(s => !pSupIds.has(s.Id));
+      if (unlinked.length > 0) {
+        html += `<div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;margin-top:2px;">`;
+        html += `<span style="font-size:10px;color:var(--accent2);margin-right:2px;">💡 Also available from:</span>`;
+        unlinked.forEach(s => {
+          const col = supColor[s.Id] || '#888';
+          html += `<span style="font-size:10px;padding:2px 8px;border-radius:4px;background:${col}11;color:${col};border:1px dashed ${col}55;font-weight:500;font-style:italic;">${esc(s.Name)}</span>`;
+        });
+        html += `</div>`;
+      }
+      html += `</div>`;
+    });
+    html += `</div></div>`;
+  });
+
+  body.innerHTML = html;
+
+  // Wire up detail sort
+  const sortSelect = body.querySelector('.detail-sort');
+  if (sortSelect) {
+    sortSelect.addEventListener('change', () => {
+      renderIngredientBody(body, data, sortSelect.value);
+    });
+  }
+
+  // Wire up supplier detail toggles
+  body.querySelectorAll('.sup-toggle').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const panel = btn.closest('.sup-compact').nextElementSibling;
+      panel.classList.toggle('open');
+      btn.textContent = panel.classList.contains('open') ? 'Details ▾' : 'Details ▸';
+    });
+  });
+
+  // Wire up "View in Suppliers" navigation
+  body.querySelectorAll('.sup-nav').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      navigateToSupplier(btn.dataset.supName);
+    });
+  });
+
+  // Wire up company chips
+  body.querySelectorAll('.co-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const idx = chip.dataset.coIdx;
+      const isActive = chip.classList.contains('active');
+      body.querySelectorAll('.co-chip').forEach(c => c.classList.remove('active'));
+      body.querySelectorAll('.co-expand').forEach(d => d.style.display = 'none');
+      if (!isActive) {
+        chip.classList.add('active');
+        const detail = body.querySelector(`[data-co-detail="${idx}"]`);
+        if (detail) detail.style.display = 'block';
+      }
+    });
+  });
+
+  // Wire up show-more for companies
+  const showMoreCoBtn = body.querySelector('.co-show-more');
+  if (showMoreCoBtn) {
+    showMoreCoBtn.addEventListener('click', () => {
+      body.querySelectorAll('.co-chip.co-hidden').forEach(c => c.classList.remove('co-hidden'));
+      showMoreCoBtn.style.display = 'none';
+    });
+  }
+}
+
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function navigateToSupplier(name) {
+  // Close any open popups
+  document.querySelectorAll('.popup-overlay').forEach(o => o.remove());
+  // Switch to supplier tab
+  $$('.main-tab').forEach(t => t.classList.remove('active'));
+  $$('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelector('[data-pane="supplierPane"]').classList.add('active');
+  $('#supplierPane').classList.add('active');
+  if (!state.suppliersLoaded) {
+    state.suppliersLoaded = true;
+  }
+  $('#supSearch').value = name;
+  loadSuppliers();
+}
+
+function humanizeSku(sku) {
+  if (!sku) return sku;
+  let cleaned = sku.replace(/^(FG|RM)-[A-Za-z0-9]+-/, '');
+  cleaned = cleaned.replace(/-[0-9a-f]{6,}$/, '');
+  cleaned = cleaned.replace(/-/g, ' ').trim();
+  return cleaned ? cleaned.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : sku;
+}
+
+// ── Supplier Explorer ────────────────────────
+let currentSupplierList = [];
+let supPage = 1;
+let allSupplierList = null; // full unfiltered cache
+const supplierDetailCache = {};
+
+async function loadSuppliers() {
+  const q = ($('#supSearch').value || '').trim();
+  if (q) {
+    if (!allSupplierList) {
+      const data = await api('/api/suppliers?minIngredients=1&minCompanies=1');
+      allSupplierList = data.suppliers;
+    }
+    currentSupplierList = allSupplierList;
+  } else {
+    const minIng = $('#supMinIngredients').value;
+    const minCo = $('#supMinCompanies').value;
+    const sole = $('#supSoleToggle').classList.contains('active') ? '1' : '0';
+    const data = await api(`/api/suppliers?minIngredients=${minIng}&minCompanies=${minCo}&soleSupplier=${sole}`);
+    currentSupplierList = data.suppliers;
+  }
+  renderSupplierList(true);
+}
+
+function renderSupplierList(resetPage) {
+  if (resetPage) supPage = 1;
+  const sort = $('#supSortSelect').value;
+  const q = ($('#supSearch').value || '').toLowerCase();
+  let list = [...currentSupplierList];
+  if (q) list = list.filter(s => s.name.toLowerCase().includes(q) || (s.ingredientNames && s.ingredientNames.some(n => n.toLowerCase().includes(q))));
+
+  const [field, dir] = sort.split('-');
+  list.sort((a, b) => {
+    let cmp = 0;
+    if (field === 'name') cmp = a.name.localeCompare(b.name);
+    else if (field === 'companies') cmp = a.companyCount - b.companyCount;
+    else if (field === 'ingredients') cmp = a.ingredientCount - b.ingredientCount;
+    else if (field === 'products') cmp = a.productCount - b.productCount;
+    return dir === 'desc' ? -cmp : cmp;
+  });
+
+  $('#supCount').textContent = `${list.length} supplier${list.length !== 1 ? 's' : ''}`;
+
+  if (list.length === 0) {
+    $('#supList').innerHTML = '<div style="color:var(--text2);padding:20px;">No suppliers match these filters.</div>';
+    $('#supPager').innerHTML = '';
+    return;
+  }
+
+  const totalPages = Math.ceil(list.length / PAGE_SIZE);
+  if (supPage > totalPages) supPage = totalPages;
+  const pageList = list.slice((supPage - 1) * PAGE_SIZE, supPage * PAGE_SIZE);
+
+  let html = `<table class="xt"><thead><tr>
+    <th>Supplier</th>
+    <th style="text-align:right;">Ingredients</th>
+    <th style="text-align:right;">Companies</th>
+    <th style="text-align:right;">Products</th>
+    <th style="text-align:right;">Sole</th>
+  </tr></thead><tbody>`;
+  pageList.forEach(s => {
+    html += `<tr class="xr" data-sup-id="${s.id}" style="cursor:pointer;">
+      <td class="xname">${esc(s.name)}</td>
+      <td class="xnum" style="color:var(--supplier);">${s.ingredientCount}</td>
+      <td class="xnum" style="color:var(--company);">${s.companyCount}</td>
+      <td class="xnum" style="color:#6c63ff;">${s.productCount}</td>
+      <td class="xnum">${s.soleProductCount > 0 ? `<span class="xwarn">⚠ ${s.soleProductCount}</span>` : '<span style="color:var(--text2);">—</span>'}</td>
+    </tr>`;
+  });
+  html += `</tbody></table>`;
+  $('#supList').innerHTML = html;
+
+  renderPager('supPager', list.length, supPage, p => { supPage = p; renderSupplierList(); $('#supList').scrollIntoView({behavior:'smooth',block:'start'}); });
+
+  // Row click → open popup
+  $$('#supList .xr').forEach(row => {
+    row.addEventListener('click', () => {
+      const sid = row.dataset.supId;
+      const name = row.querySelector('.xname').textContent;
+      openSupplierPopup(sid, name);
+    });
+  });
+}
+
+async function loadSupplierCard(card) {
+  const sid = card.dataset.supId;
+  const body = card.querySelector('.ingr-card-body');
+  if (supplierDetailCache[sid]) {
+    renderSupplierBody(body, supplierDetailCache[sid]);
+    return;
+  }
+  body.innerHTML = '<div class="ingr-loading">Loading details…</div>';
+  const data = await api(`/api/supplier/${sid}`);
+  supplierDetailCache[sid] = data;
+  renderSupplierBody(body, data);
+}
+
+function renderSupplierBody(body, data) {
+  const ingredients = data.ingredients;
+  const rating = data.rating;
+  const procurement = data.procurement;
+  let html = '';
+
+  // Rating scorecard
+  if (rating) {
+    html += `<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin-bottom:14px;">`;
+    html += `<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">`;
+    html += `<h4 style="font-size:12px;color:var(--text2);margin:0;">SUPPLIER SCORECARD</h4>`;
+    const riskCol = rating.riskTier === 'low' ? 'var(--success)' : rating.riskTier === 'high' ? 'var(--danger)' : 'var(--accent3)';
+    html += `<span style="font-size:10px;padding:3px 10px;border-radius:4px;background:${riskCol}22;color:${riskCol};font-weight:700;text-transform:uppercase;">${rating.riskTier} risk</span>`;
+    html += `</div>`;
+    // Score bars
+    const scores = [
+      { label: 'Quality', val: rating.qualityScore },
+      { label: 'Compliance', val: rating.complianceScore },
+      { label: 'Reliability', val: rating.reliabilityScore },
+    ];
+    scores.forEach(s => {
+      const col = s.val >= 85 ? 'var(--success)' : s.val >= 70 ? 'var(--accent3)' : 'var(--danger)';
+      html += `<div style="display:flex;align-items:center;gap:10px;margin-bottom:5px;font-size:12px;">`;
+      html += `<span style="width:80px;color:var(--text2);">${s.label}</span>`;
+      html += `<div style="flex:1;max-width:200px;height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;">`;
+      html += `<div style="width:${s.val}%;height:100%;background:${col};border-radius:3px;"></div>`;
+      html += `</div>`;
+      html += `<strong style="color:${col};width:30px;">${s.val.toFixed(0)}</strong>`;
+      html += `</div>`;
+    });
+    // Additional info
+    html += `<div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;font-size:11px;color:var(--text2);">`;
+    if (rating.leadTimeDays) html += `<span>Lead time: <strong style="color:var(--text);">${rating.leadTimeDays} days</strong></span>`;
+    if (rating.lastAuditDate) html += `<span>Last audit: <strong style="color:var(--text);">${rating.lastAuditDate}</strong></span>`;
+    html += `</div>`;
+    // Certifications
+    if (rating.certifications && rating.certifications.length) {
+      html += `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:8px;">`;
+      rating.certifications.forEach(c => {
+        html += `<span style="font-size:10px;padding:2px 8px;border-radius:4px;background:rgba(0,212,170,.1);color:var(--accent2);border:1px solid rgba(0,212,170,.2);">${esc(c)}</span>`;
+      });
+      html += `</div>`;
+    }
+    html += `</div>`;
+  }
+
+  // Procurement summary
+  if (procurement) {
+    html += `<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin-bottom:14px;">`;
+    html += `<h4 style="font-size:12px;color:var(--text2);margin-bottom:8px;">PROCUREMENT HISTORY</h4>`;
+    html += `<div style="display:flex;gap:16px;flex-wrap:wrap;font-size:13px;">`;
+    html += `<span>Total spend: <strong style="color:var(--accent2);">$${Number(procurement.totalSpend).toLocaleString()}</strong></span>`;
+    html += `<span>Orders: <strong>${procurement.orderCount}</strong></span>`;
+    if (procurement.onTimeRate != null) {
+      const otCol = procurement.onTimeRate >= 90 ? 'var(--success)' : procurement.onTimeRate >= 75 ? 'var(--accent3)' : 'var(--danger)';
+      html += `<span>On-time: <strong style="color:${otCol};">${procurement.onTimeRate}%</strong></span>`;
+    }
+    if (procurement.avgQualityPass != null) {
+      html += `<span>Avg quality pass: <strong>${procurement.avgQualityPass}%</strong></span>`;
+    }
+    html += `</div></div>`;
+  }
+
+  // Summary chips
+  html += `<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;">`;
+  html += `<div class="insight-chip">Supplies <strong>${data.ingredientCount}</strong> unique ingredient${data.ingredientCount !== 1 ? 's' : ''}</div>`;
+  html += `<div class="insight-chip">Serves <strong>${data.companyCount}</strong> company${data.companyCount !== 1 ? 'ies' : ''}</div>`;
+  html += `<div class="insight-chip"><strong>${data.productCount}</strong> product SKU${data.productCount !== 1 ? 's' : ''}</div>`;
+  // Count sole-supplier products
+  let soleCount = 0;
+  ingredients.forEach(ing => { soleCount += ing.soleSupplierCount; });
+  if (soleCount > 0) {
+    html += `<div class="insight-chip" style="border-color:var(--danger);"><strong style="color:var(--danger);">${soleCount}</strong> product${soleCount !== 1 ? 's' : ''} depend solely on this supplier</div>`;
+  }
+  html += `</div>`;
+
+  // Ingredients list — compact table with popup details
+  html += `<h4 style="font-size:12px;color:var(--text2);margin-bottom:8px;">INGREDIENTS SUPPLIED (${ingredients.length})</h4>`;
+  html += `<table class="xt"><thead><tr>`;
+  html += `<th>Ingredient</th><th>Companies</th><th>Products</th><th>Sole</th>`;
+  html += `</tr></thead><tbody>`;
+  ingredients.forEach((ing, ii) => {
+    const soleWarn = ing.soleSupplierCount > 0;
+    html += `<tr class="xr sup-ing-row" data-idx="${ii}" style="cursor:pointer;">`;
+    html += `<td class="xname">${esc(ing.name)}</td>`;
+    html += `<td class="xnum">${ing.companyCount}</td>`;
+    html += `<td class="xnum">${ing.productCount}</td>`;
+    html += `<td class="xnum">${soleWarn ? `<span class="xwarn">${ing.soleSupplierCount}</span>` : '—'}</td>`;
+    html += `</tr>`;
+  });
+  html += `</tbody></table>`;
+
+  body.innerHTML = html;
+
+  // Wire up ingredient row clicks → open popup with companies table
+  body.querySelectorAll('.sup-ing-row').forEach(row => {
+    row.addEventListener('click', () => {
+      const ing = ingredients[+row.dataset.idx];
+      // Find enclosing popup overlay if inside one
+      const parentOverlay = body.closest('.popup-overlay');
+      if (parentOverlay) parentOverlay.style.display = 'none';
+      openIngredientPopup(ing, parentOverlay);
+    });
+  });
+}
+
+function openIngredientDetailPopup(baseName, displayName) {
+  const overlay = document.createElement('div');
+  overlay.className = 'popup-overlay';
+  overlay.innerHTML = `<div class="popup-panel">
+    <div class="popup-header"><h3>${esc(displayName)}</h3><button class="popup-close">✕</button></div>
+    <div class="popup-body"><div class="ingr-loading">Loading details…</div></div>
+  </div>`;
+  document.body.appendChild(overlay);
+
+  const close = () => overlay.remove();
+  overlay.querySelector('.popup-close').addEventListener('click', close);
+  overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+  document.addEventListener('keydown', function esc_handler(e) {
+    if (e.key === 'Escape') { close(); document.removeEventListener('keydown', esc_handler); }
+  });
+
+  const body = overlay.querySelector('.popup-body');
+  if (ingredientCache[baseName]) {
+    renderIngredientBody(body, ingredientCache[baseName]);
+  } else {
+    api(`/api/ingredient/${encodeURIComponent(baseName)}`).then(data => {
+      ingredientCache[baseName] = data;
+      renderIngredientBody(body, data);
+    });
+  }
+}
+
+function openIngredientPopup(ing, parentOverlay) {
+  // Build popup with a companies table
+  const overlay = document.createElement('div');
+  overlay.className = 'popup-overlay';
+
+  let ph = `<div class="popup-panel">`;
+  ph += `<div class="popup-header">`;
+  if (parentOverlay) ph += `<button class="popup-back">◀ Back</button>`;
+  ph += `<h3>${esc(ing.name)} — ${ing.companyCount} compan${ing.companyCount !== 1 ? 'ies' : 'y'}, ${ing.productCount} product${ing.productCount !== 1 ? 's' : ''}</h3>`;
+  ph += `<button class="popup-close">✕</button>`;
+  ph += `</div>`;
+  ph += `<div class="popup-body">`;
+
+  // Alternative suppliers note
+  if (ing.alternativeSuppliers && ing.alternativeSuppliers.length > 0) {
+    ph += `<div style="font-size:11px;color:var(--text2);margin-bottom:10px;padding:6px 10px;background:var(--surface2);border-radius:6px;">`;
+    ph += `💡 Also supplied by: ${ing.alternativeSuppliers.map(a => '<strong style="color:var(--accent2);">' + esc(a.name) + '</strong>').join(', ')}`;
+    ph += `</div>`;
+  } else if (ing.soleSupplierCount > 0) {
+    ph += `<div style="font-size:11px;color:var(--danger);margin-bottom:10px;padding:6px 10px;background:rgba(239,68,68,.06);border-radius:6px;">`;
+    ph += `⚠️ No known alternative suppliers in database`;
+    ph += `</div>`;
+  }
+
+  // Companies → products table
+  ph += `<table class="xt"><thead><tr>`;
+  ph += `<th>Company</th><th>Product</th><th>Status</th><th>Also supplied by</th>`;
+  ph += `</tr></thead><tbody>`;
+  ing.companies.forEach(co => {
+    co.products.forEach((p, pi) => {
+      const name = humanizeSku(p.productSku);
+      const sole = p.soleSupplier;
+      ph += `<tr>`;
+      // Show company name only on first product row for that company
+      if (pi === 0) {
+        ph += `<td class="xname" rowspan="${co.products.length}" style="vertical-align:top;">${esc(co.name)}</td>`;
+      }
+      ph += `<td style="font-size:12px;">${esc(name)}</td>`;
+      ph += `<td>${sole
+        ? '<span class="popup-badge sole">SOLE</span>'
+        : '<span class="popup-badge comp">+' + p.competitors.length + ' supplier' + (p.competitors.length !== 1 ? 's' : '') + '</span>'
+      }</td>`;
+      ph += `<td style="font-size:11px;color:var(--text2);">${sole
+        ? '—'
+        : p.competitors.map(c => esc(c.name)).join(', ')
+      }</td>`;
+      ph += `</tr>`;
+    });
+  });
+  ph += `</tbody></table>`;
+  ph += `</div></div>`;
+
+  overlay.innerHTML = ph;
+  document.body.appendChild(overlay);
+
+  // Close handlers
+  const close = () => {
+    overlay.remove();
+    if (parentOverlay) { parentOverlay.style.display = 'flex'; }
+  };
+  overlay.querySelector('.popup-close').addEventListener('click', () => {
+    overlay.remove();
+    if (parentOverlay) parentOverlay.remove();
+  });
+  overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+  const backBtn = overlay.querySelector('.popup-back');
+  if (backBtn) backBtn.addEventListener('click', close);
+  document.addEventListener('keydown', function esc_handler(e) {
+    if (e.key === 'Escape') { close(); document.removeEventListener('keydown', esc_handler); }
+  });
+}
+
+function openSupplierPopup(sid, name) {
+  const overlay = document.createElement('div');
+  overlay.className = 'popup-overlay';
+  overlay.innerHTML = `<div class="popup-panel">
+    <div class="popup-header"><h3>${esc(name)}</h3><button class="popup-close">✕</button></div>
+    <div class="popup-body"><div class="ingr-loading">Loading details…</div></div>
+  </div>`;
+  document.body.appendChild(overlay);
+
+  const close = () => overlay.remove();
+  overlay.querySelector('.popup-close').addEventListener('click', close);
+  overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+  document.addEventListener('keydown', function esc_handler(e) {
+    if (e.key === 'Escape') { close(); document.removeEventListener('keydown', esc_handler); }
+  });
+
+  const body = overlay.querySelector('.popup-body');
+  if (supplierDetailCache[sid]) {
+    renderSupplierBody(body, supplierDetailCache[sid]);
+  } else {
+    api(`/api/supplier/${sid}`).then(data => {
+      supplierDetailCache[sid] = data;
+      renderSupplierBody(body, data);
+    });
+  }
+}
+
+// ── Graph Tab ────────────────────────────────
+let network = null;
+
+async function loadGraphOptions() {
+  const data = await api('/api/options');
+  state.optionsData = data;
+
+  const cs = $('#companySelect');
+  data.companies.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.Id;
+    opt.textContent = `${c.Name} (${c.finishedGoodCount} FG)`;
+    cs.appendChild(opt);
+  });
+  cs.addEventListener('change', () => {
+    state.companyId = cs.value ? parseInt(cs.value) : null;
+    state.productId = null;
+    filterProducts();
+    loadGraph();
+  });
+
+  const ps = $('#productSelect');
+  function filterProducts() {
+    const filtered = state.companyId
+      ? data.products.filter(p => p.CompanyName === data.companies.find(c => c.Id === state.companyId)?.Name)
+      : data.products;
+    ps.innerHTML = '<option value="">First available</option>';
+    filtered.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.Id;
+      opt.textContent = `${humanizeSku(p.SKU)} — ${p.CompanyName}`;
+      ps.appendChild(opt);
+    });
+  }
+  window.filterProducts = filterProducts;
+  filterProducts();
+
+  ps.addEventListener('change', () => {
+    state.productId = ps.value ? parseInt(ps.value) : null;
+    loadGraph();
+  });
+
+  loadGraph();
+}
+
+async function loadGraph() {
+  const params = new URLSearchParams();
+  if (state.companyId) params.set('companyId', state.companyId);
+  if (state.productId) params.set('productId', state.productId);
+
+  const data = await api('/api/graph?' + params);
+
+  if (data.focus) {
+    $('#focusLabel').textContent = `Showing: ${data.focus.companyLabel} → ${humanizeSku(data.focus.productLabel)}`;
+  } else {
+    $('#focusLabel').textContent = '';
+  }
+
+  const visNodes = data.nodes.map(n => ({
+    id: n.id,
+    label: n.label,
+    title: n.subtitle || '',
+    color: {
+      background: nodeColorMap[n.type] || '#888',
+      border: nodeColorMap[n.type] || '#888',
+      highlight: { background: '#fff', border: nodeColorMap[n.type] || '#888' },
+    },
+    font: { color: '#e9f4ff', size: 12 },
+    shape: n.type === 'company' ? 'diamond' : n.type === 'bom' ? 'box' : 'dot',
+    size: n.type === 'company' ? 24 : n.type === 'product' ? 22 : n.type === 'bom' ? 16 : n.type === 'supplier' ? 14 : 18,
+  }));
+
+  const visEdges = data.edges.map(e => ({
+    from: e.from, to: e.to, label: e.label,
+    font: { color: '#556', size: 10, strokeWidth: 0 },
+    color: { color: '#334155', highlight: '#6c63ff' },
+    arrows: 'to',
+    smooth: { type: 'cubicBezier', roundness: 0.3 },
+  }));
+
+  const container = $('#graphContainer');
+  if (network) { network.destroy(); network = null; }
+
+  network = new vis.Network(container, {
+    nodes: new vis.DataSet(visNodes),
+    edges: new vis.DataSet(visEdges),
+  }, {
+    physics: {
+      solver: 'forceAtlas2Based',
+      forceAtlas2Based: { gravitationalConstant: -60, springLength: 120 },
+      stabilization: { iterations: 200 },
+    },
+    interaction: { hover: true, tooltipDelay: 100 },
+    layout: { improvedLayout: true },
+  });
+
+  // Component table under graph
+  if (data.componentTable && data.componentTable.length > 0) {
+    const maxSup = Math.max(...data.componentTable.map(r => r.supplierCount), 1);
+    let html = '<table class="graph-comp-table"><thead><tr><th>#</th><th>Component</th><th>SKU</th><th>Suppliers</th></tr></thead><tbody>';
+    data.componentTable.forEach((row, i) => {
+      html += `<tr><td>${i+1}</td><td>${esc(row.name)}</td><td style="font-size:11px;color:var(--text2)">${esc(row.sku)}</td><td>${row.supplierCount} <span style="display:inline-block;height:6px;border-radius:3px;background:var(--supplier);width:${Math.round(row.supplierCount/maxSup*80)}px;vertical-align:middle;margin-left:6px"></span></td></tr>`;
+    });
+    html += '</tbody></table>';
+    $('#graphCompTable').innerHTML = html;
+  } else {
+    $('#graphCompTable').innerHTML = '';
+  }
+}
+
+// ── Table Explorer ───────────────────────────
+async function loadTableList() {
+  const data = await api('/api/tables');
+  $('#tableTabs').innerHTML = data.tables.map(t =>
+    `<button class="tab-btn" data-table="${t}">${t}</button>`
+  ).join('');
+  $$('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      $$('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state.explorerTable = btn.dataset.table;
+      state.explorerOffset = 0;
+      state.columnFilters[btn.dataset.table] = {};
+      loadTableData();
+    });
+  });
+}
+
+// Track column filters per table
+if (!state.columnFilters) state.columnFilters = {};
+let _filterDebounce = null;
+
+async function loadTableData() {
+  if (!state.explorerTable) return;
+  const filters = state.columnFilters[state.explorerTable] || {};
+  let url = `/api/table/${state.explorerTable}?limit=25&offset=${state.explorerOffset}`;
+  for (const [col, val] of Object.entries(filters)) {
+    if (val) url += `&filter_${encodeURIComponent(col)}=${encodeURIComponent(val)}`;
+  }
+  const data = await api(url);
+  const p = data.pagination;
+
+  let html = '<table class="raw-table"><thead><tr>';
+  data.columns.forEach(col => { html += `<th>${col}</th>`; });
+  html += '</tr>';
+  // Filter row
+  html += '<tr class="filter-row">';
+  data.columns.forEach(col => {
+    const val = filters[col] || '';
+    html += `<th><input type="text" class="col-filter" data-col="${esc(col)}" placeholder="Search…" value="${esc(val)}" style="width:100%;font-size:11px;padding:4px 6px;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:4px;outline:none;"></th>`;
+  });
+  html += '</tr></thead><tbody>';
+  if (data.rows.length === 0) {
+    html += `<tr><td colspan="${data.columns.length}" style="text-align:center;color:var(--text2);padding:20px;">No rows match the filters</td></tr>`;
+  }
+  data.rows.forEach(row => {
+    html += '<tr>';
+    data.columns.forEach(col => { html += `<td>${row[col] ?? ''}</td>`; });
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  html += `<div class="pagination">
+    <button class="page-btn" id="prevPage" ${p.offset === 0 ? 'disabled' : ''}>← Prev</button>
+    <span>${p.offset + 1}–${Math.min(p.offset + p.limit, p.total)} of ${p.total}</span>
+    <button class="page-btn" id="nextPage" ${p.offset + p.limit >= p.total ? 'disabled' : ''}>Next →</button>
+  </div>`;
+
+  $('#tableContent').innerHTML = html;
+  $('#prevPage')?.addEventListener('click', () => { state.explorerOffset = Math.max(0, state.explorerOffset - 25); loadTableData(); });
+  $('#nextPage')?.addEventListener('click', () => { state.explorerOffset += 25; loadTableData(); });
+
+  // Wire up column filter inputs with debounce
+  $$('.col-filter').forEach(input => {
+    input.addEventListener('input', () => {
+      const col = input.dataset.col;
+      if (!state.columnFilters[state.explorerTable]) state.columnFilters[state.explorerTable] = {};
+      state.columnFilters[state.explorerTable][col] = input.value;
+      clearTimeout(_filterDebounce);
+      _filterDebounce = setTimeout(() => { state.explorerOffset = 0; loadTableData(); }, 300);
+    });
+  });
+}
+
+// ── Procurement / Cost Savings ───────────────
+let allSavings = [];
+let savingsPage = 1;
+let allSupRankings = [];
+
+async function loadProcurement() {
+  const [overview, savingsData, suppData] = await Promise.all([
+    api('/api/procurement/overview'),
+    api('/api/procurement/savings'),
+    api('/api/procurement/suppliers'),
+  ]);
+
+  allSavings = savingsData.savings || [];
+  allSupRankings = suppData.suppliers || [];
+
+  // Render stats
+  const s = overview.summary;
+  let statsHtml = '<div class="stat-grid">';
+  statsHtml += `<div class="stat-card"><div class="stat-value">$${formatBigNum(s.totalSpend)}</div><div class="stat-label">Total Spend</div></div>`;
+  statsHtml += `<div class="stat-card"><div class="stat-value">${Number(s.orderCount).toLocaleString()}</div><div class="stat-label">Orders</div></div>`;
+  statsHtml += `<div class="stat-card"><div class="stat-value">${s.supplierCount}</div><div class="stat-label">Suppliers</div></div>`;
+  statsHtml += `<div class="stat-card"><div class="stat-value">${s.ingredientCount}</div><div class="stat-label">Ingredients</div></div>`;
+  statsHtml += `<div class="stat-card"><div class="stat-value">${s.avgOnTimeRate}%</div><div class="stat-label">Avg On-Time</div></div>`;
+  statsHtml += `<div class="stat-card"><div class="stat-value">${s.avgQualityPass}%</div><div class="stat-label">Avg Quality Pass</div></div>`;
+  // Total potential savings
+  const totalPotSavings = allSavings.reduce((sum, x) => sum + x.estimatedSavings, 0);
+  statsHtml += `<div class="stat-card" style="border-color:var(--success);"><div class="stat-value" style="color:var(--success);">$${formatBigNum(totalPotSavings)}</div><div class="stat-label">Total Potential Savings</div></div>`;
+  statsHtml += '</div>';
+  $('#procStats').innerHTML = statsHtml;
+
+  renderSavingsList(true);
+  renderSupplierRankings();
+
+  // Wire up controls
+  $('#savingsSearch').addEventListener('input', debounce(() => renderSavingsList(true), 200));
+  $('#minSavingsSelect').addEventListener('change', () => renderSavingsList(true));
+  $('#minSpreadSelect').addEventListener('change', () => renderSavingsList(true));
+  $('#savingsSortSelect').addEventListener('change', () => renderSavingsList());
+}
+
+function formatBigNum(n) {
+  if (n >= 1e9) return (n / 1e9).toFixed(1) + 'B';
+  if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
+  if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
+  return String(Math.round(n));
+}
+
+function debounce(fn, ms) {
+  let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+}
+
+function scoreColor(v) {
+  if (v >= 85) return 'var(--success)';
+  if (v >= 70) return 'var(--accent3, #f59e0b)';
+  return 'var(--danger)';
+}
+
+function renderSavingsList(resetPage) {
+  if (resetPage) savingsPage = 1;
+  const q = ($('#savingsSearch')?.value || '').toLowerCase();
+  const minSav = parseInt($('#minSavingsSelect').value) || 0;
+  const minSpread = parseInt($('#minSpreadSelect').value) || 0;
+  const sort = $('#savingsSortSelect').value;
+
+  let list = allSavings.filter(s => {
+    if (q && !s.name.toLowerCase().includes(q) && !s.baseName.includes(q)) return false;
+    if (s.estimatedSavings < minSav) return false;
+    if (s.spreadPct < minSpread) return false;
+    return true;
+  });
+
+  const [sf, sd] = sort.split('-');
+  list.sort((a, b) => {
+    let cmp = 0;
+    if (sf === 'savings') cmp = a.estimatedSavings - b.estimatedSavings;
+    else if (sf === 'spread') cmp = a.spreadPct - b.spreadPct;
+    else if (sf === 'spend') cmp = a.totalSpend - b.totalSpend;
+    else if (sf === 'name') cmp = a.name.localeCompare(b.name);
+    return sd === 'desc' ? -cmp : cmp;
+  });
+
+  $('#savingsCount').textContent = `${list.length} ingredient${list.length !== 1 ? 's' : ''} · $${formatBigNum(list.reduce((s,x) => s + x.estimatedSavings, 0))} potential savings`;
+
+  if (!list.length) {
+    $('#savingsList').innerHTML = '<div style="color:var(--text2);padding:20px;">No savings opportunities match these filters.</div>';
+    $('#savingsPager').innerHTML = '';
+    return;
+  }
+
+  const totalPages = Math.ceil(list.length / PAGE_SIZE);
+  if (savingsPage > totalPages) savingsPage = totalPages;
+  const _off = (savingsPage - 1) * PAGE_SIZE;
+  const pageList = list.slice(_off, _off + PAGE_SIZE);
+
+  let html = `<table class="xt"><thead><tr>
+    <th style="width:18px;"></th>
+    <th>#</th>
+    <th>Ingredient</th>
+    <th style="text-align:right;">Savings</th>
+    <th style="text-align:right;">Spread</th>
+    <th style="text-align:right;">Cheapest</th>
+    <th style="text-align:right;">Most exp.</th>
+    <th style="text-align:right;">Suppliers</th>
+    <th style="text-align:right;">Spend</th>
+  </tr></thead><tbody>`;
+  pageList.forEach((s, pi) => {
+    const idx = _off + pi;
+    const savCol = s.estimatedSavings > 100000 ? 'var(--success)' : s.estimatedSavings > 10000 ? 'var(--accent2)' : 'var(--text)';
+    const spreadCol = s.spreadPct >= 25 ? 'var(--danger)' : s.spreadPct >= 15 ? 'var(--accent3, #f59e0b)' : 'var(--text)';
+
+    html += `<tr class="xr" data-sidx="${idx}">
+      <td><span class="xarrow">▶</span></td>
+      <td class="xnum" style="color:var(--text2);">${idx + 1}</td>
+      <td class="xname">${esc(s.name)}</td>
+      <td class="xnum" style="color:${savCol};font-weight:700;">↓ $${formatBigNum(s.estimatedSavings)}</td>
+      <td class="xnum" style="color:${spreadCol};font-weight:600;">${s.spreadPct}%</td>
+      <td class="xnum">$${s.cheapestPrice}/kg</td>
+      <td class="xnum">$${s.expensivePrice}/kg</td>
+      <td class="xnum">${s.supplierCount}</td>
+      <td class="xnum">$${formatBigNum(s.totalSpend)}</td>
+    </tr>`;
+
+    // Detail row
+    const riskCol = s.cheapestRisk === 'low' ? 'var(--success)' : s.cheapestRisk === 'high' ? 'var(--danger)' : 'var(--accent3, #f59e0b)';
+    let det = `<tr class="xdetail" data-sidx="${idx}"><td colspan="9"><div class="xdbody"><div class="savings-detail" style="display:block;">`;
+    det += `<div style="background:rgba(0,212,170,.06);border:1px solid rgba(0,212,170,.2);border-radius:8px;padding:10px 14px;margin-bottom:10px;">`;
+    det += `<div style="font-size:10px;color:var(--accent2);font-weight:600;margin-bottom:4px;">💰 CHEAPEST QUALIFIED SUPPLIER</div>`;
+    det += `<div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center;font-size:12px;">`;
+    det += `<strong>${esc(s.cheapestSupplier)}</strong> $${s.cheapestPrice}/kg`;
+    if (s.cheapestQuality) det += ` · Quality: <strong style="color:${scoreColor(s.cheapestQuality)};">${s.cheapestQuality.toFixed(0)}</strong>`;
+    if (s.cheapestCompliance) det += ` · Compliance: <strong style="color:${scoreColor(s.cheapestCompliance)};">${s.cheapestCompliance.toFixed(0)}</strong>`;
+    if (s.cheapestOnTime != null) det += ` · On-time: <strong>${s.cheapestOnTime}%</strong>`;
+    det += ` <span class="xpill" style="background:${riskCol}22;color:${riskCol};">${s.cheapestRisk || 'N/A'} risk</span>`;
+    det += `</div>`;
+    if (s.cheapestCerts) {
+      det += `<div style="display:flex;gap:3px;flex-wrap:wrap;margin-top:4px;">`;
+      s.cheapestCerts.split(',').filter(Boolean).forEach(c => {
+        det += `<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:rgba(0,212,170,.1);color:var(--accent2);border:1px solid rgba(0,212,170,.2);">${esc(c.trim())}</span>`;
+      });
+      det += `</div>`;
+    }
+    det += `</div>`;
+    const volPct = (s.volatility * 100).toFixed(0);
+    const volCol = s.volatility > 0.2 ? 'var(--danger)' : s.volatility > 0.12 ? 'var(--accent3, #f59e0b)' : 'var(--success)';
+    det += `<div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:10px;font-size:11px;color:var(--text2);">`;
+    det += `Benchmark: <strong style="color:var(--text);">$${s.marketPrice.toFixed(2)}/kg</strong> · Volatility: <strong style="color:${volCol};">${volPct}%</strong> · Shiftable: <strong style="color:var(--text);">$${Number(s.shiftableSpend).toLocaleString()}</strong>`;
+    det += `</div>`;
+    det += `<table class="sup-rank-table"><thead><tr><th>Supplier</th><th>Avg $/kg</th><th>Spend</th><th>Orders</th><th>On-Time</th><th>Quality</th><th>Compliance</th><th>Risk</th></tr></thead><tbody>`;
+    s.suppliers.forEach(sp => {
+      const isCheapest = sp.name === s.cheapestSupplier;
+      const rowStyle = isCheapest ? 'background:rgba(0,212,170,.04);' : '';
+      const rk = sp.riskTier || 'N/A';
+      const rc = rk === 'low' ? 'var(--success)' : rk === 'high' ? 'var(--danger)' : 'var(--accent3, #f59e0b)';
+      det += `<tr style="${rowStyle}">`;
+      det += `<td style="font-weight:${isCheapest ? '700' : '400'};">${esc(sp.name)}${isCheapest ? ' ★' : ''}</td>`;
+      det += `<td style="font-weight:600;color:${isCheapest ? 'var(--success)' : 'var(--text)'};">$${sp.avgPrice}</td>`;
+      det += `<td>$${formatBigNum(sp.totalSpend)}</td>`;
+      det += `<td>${sp.orderCount}</td>`;
+      det += `<td>${sp.onTimeRate != null ? sp.onTimeRate + '%' : '—'}</td>`;
+      det += `<td style="color:${sp.qualityScore ? scoreColor(sp.qualityScore) : 'var(--text2)'};">${sp.qualityScore ? sp.qualityScore.toFixed(0) : '—'}</td>`;
+      det += `<td style="color:${sp.complianceScore ? scoreColor(sp.complianceScore) : 'var(--text2)'};">${sp.complianceScore ? sp.complianceScore.toFixed(0) : '—'}</td>`;
+      det += `<td><span style="font-size:10px;padding:1px 6px;border-radius:3px;background:${rc}22;color:${rc};font-weight:600;">${rk}</span></td>`;
+      det += `</tr>`;
+    });
+    det += `</tbody></table></div></div></td></tr>`;
+    html += det;
+  });
+  html += `</tbody></table>`;
+  $('#savingsList').innerHTML = html;
+
+  renderPager('savingsPager', list.length, savingsPage, p => { savingsPage = p; renderSavingsList(); $('#savingsList').scrollIntoView({behavior:'smooth',block:'start'}); });
+
+  $$('#savingsList .xr').forEach(row => {
+    row.addEventListener('click', () => {
+      const wasOpen = row.classList.contains('open');
+      $$('#savingsList .xr.open').forEach(r => { r.classList.remove('open'); r.nextElementSibling.classList.remove('open'); });
+      if (!wasOpen) { row.classList.add('open'); row.nextElementSibling.classList.add('open'); }
+    });
+  });
+}
+
+function renderSupplierRankings() {
+  if (!allSupRankings.length) {
+    $('#supplierRankings').innerHTML = '<div style="color:var(--text2);padding:20px;">No supplier data.</div>';
+    return;
+  }
+  const maxSpend = Math.max(...allSupRankings.map(s => s.totalSpend || 0), 1);
+
+  let html = '<table class="sup-rank-table">';
+  html += '<thead><tr><th>#</th><th>Supplier</th><th>Total Spend</th><th></th><th>Orders</th><th>Avg $/kg</th><th>On-Time</th><th>Quality</th><th>Compliance</th><th>Reliability</th><th>Risk</th><th>Products</th><th>Companies</th></tr></thead><tbody>';
+  allSupRankings.forEach((s, i) => {
+    const rk = s.RiskTier || 'N/A';
+    const rc = rk === 'low' ? 'var(--success)' : rk === 'high' ? 'var(--danger)' : 'var(--accent3, #f59e0b)';
+    const barW = Math.round((s.totalSpend || 0) / maxSpend * 80);
+    html += `<tr>`;
+    html += `<td style="color:var(--text2);">${i + 1}</td>`;
+    html += `<td style="font-weight:600;">${esc(s.Name)}</td>`;
+    html += `<td>$${formatBigNum(s.totalSpend || 0)}</td>`;
+    html += `<td><div style="width:${barW}px;height:5px;border-radius:3px;background:var(--accent);"></div></td>`;
+    html += `<td>${(s.orderCount || 0).toLocaleString()}</td>`;
+    html += `<td>${s.avgUnitPrice ? '$' + s.avgUnitPrice : '—'}</td>`;
+    const otCol = s.onTimeRate >= 90 ? 'var(--success)' : s.onTimeRate >= 75 ? 'var(--accent3, #f59e0b)' : 'var(--danger)';
+    html += `<td style="color:${s.onTimeRate ? otCol : 'var(--text2)'};">${s.onTimeRate != null ? s.onTimeRate + '%' : '—'}</td>`;
+    html += `<td style="color:${s.QualityScore ? scoreColor(s.QualityScore) : 'var(--text2)'};">${s.QualityScore ? s.QualityScore.toFixed(0) : '—'}</td>`;
+    html += `<td style="color:${s.ComplianceScore ? scoreColor(s.ComplianceScore) : 'var(--text2)'};">${s.ComplianceScore ? s.ComplianceScore.toFixed(0) : '—'}</td>`;
+    html += `<td style="color:${s.ReliabilityScore ? scoreColor(s.ReliabilityScore) : 'var(--text2)'};">${s.ReliabilityScore ? s.ReliabilityScore.toFixed(0) : '—'}</td>`;
+    html += `<td><span style="font-size:10px;padding:1px 6px;border-radius:3px;background:${rc}22;color:${rc};font-weight:600;">${rk}</span></td>`;
+    html += `<td>${s.productCount || 0}</td>`;
+    html += `<td>${s.companyCount || 0}</td>`;
+    html += `</tr>`;
+  });
+  html += '</tbody></table>';
+  $('#supplierRankings').innerHTML = html;
+}
+</script>
+</body>
+</html>

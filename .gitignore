@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+.env
+*.sqlite-journal
+.vercel
+node_modules/
+taim/orders/pdfs/
+taim/cube/session_log.json

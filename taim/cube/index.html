@@ -1,0 +1,1396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AgnesTheSecond — Voice Cube</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Sora:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0f1a;
+    --surface: #111827;
+    --surface2: #1a2236;
+    --border: #263350;
+    --text: #e9f4ff;
+    --text2: #8ba3c7;
+    --accent: #6c63ff;
+    --accent2: #00d4aa;
+    --danger: #ef4444;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Sora', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  h1, h2, h3, h4 { font-family: 'Space Grotesk', sans-serif; }
+
+  /* ── Top Nav ────────────────────────────────── */
+  .topnav {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 32px;
+    height: 56px;
+    gap: 32px;
+    flex-shrink: 0;
+    z-index: 100;
+  }
+  .topnav .logo {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 20px; font-weight: 700;
+    color: var(--accent); margin-right: 16px;
+  }
+  .topnav .logo span { color: var(--accent2); }
+  .topnav a {
+    color: var(--text2); text-decoration: none; font-size: 13px;
+    font-weight: 600; letter-spacing: .5px; padding: 16px 4px;
+    border-bottom: 2px solid transparent; transition: color .2s, border-color .2s;
+  }
+  .topnav a:hover { color: var(--text); }
+  .topnav a.active { color: var(--accent2); border-bottom-color: var(--accent2); }
+  .topnav .spacer { flex: 1; }
+  .topnav .key-group {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .topnav .key-status {
+    font-size: 11px; color: var(--text2);
+    display: flex; align-items: center; gap: 6px; cursor: pointer;
+  }
+  .topnav .key-status .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--danger); transition: background .2s;
+  }
+  .topnav .key-status .dot.ok { background: var(--accent2); }
+
+  /* ── Scene ──────────────────────────────────── */
+  .scene-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  /* ── Ambient glow ───────────────────────────── */
+  .ambient-glow {
+    position: absolute;
+    width: 500px; height: 500px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(108,99,255,0.15) 0%, rgba(0,212,170,0.08) 40%, transparent 70%);
+    filter: blur(60px);
+    pointer-events: none;
+    transition: transform 0.6s ease, opacity 0.6s ease;
+  }
+  .ambient-glow.speaking {
+    transform: scale(1.3);
+    opacity: 0.9;
+  }
+  .ambient-glow.listening {
+    transform: scale(1.0);
+    opacity: 0.6;
+  }
+
+  /* ── 3D Cube ────────────────────────────────── */
+  .cube-stage {
+    perspective: 800px;
+    width: 200px; height: 200px;
+    position: relative;
+    z-index: 2;
+    transition: transform 0.15s ease;
+  }
+  .cube-stage.pulsing {
+    animation: stagePulse 0.5s ease-in-out infinite;
+  }
+  .cube {
+    width: 200px; height: 200px;
+    position: relative;
+    transform-style: preserve-3d;
+    animation: cubeFloat 24s linear infinite;
+  }
+
+  .cube-face {
+    position: absolute;
+    width: 200px; height: 200px;
+    border: 1.5px solid rgba(0,212,170,0.25);
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(108,99,255,0.12) 0%, rgba(0,212,170,0.12) 100%);
+    backdrop-filter: blur(2px);
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  .cube-face::before {
+    content: '';
+    position: absolute; inset: 0;
+    border-radius: 12px;
+    background: linear-gradient(var(--grad-angle, 45deg),
+      rgba(108,99,255,0.35) 0%,
+      rgba(0,212,170,0.25) 25%,
+      rgba(108,99,255,0.15) 50%,
+      rgba(0,212,170,0.35) 75%,
+      rgba(108,99,255,0.25) 100%
+    );
+    background-size: 300% 300%;
+    animation: gradientShift 4s ease infinite;
+    opacity: 0.8;
+  }
+  .cube-face::after {
+    content: '';
+    position: absolute; inset: 3px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+
+  /* Cube speaking extra glow on faces */
+  .cube.speaking .cube-face::before {
+    opacity: 1;
+    animation: gradientShift 1.5s ease infinite;
+  }
+
+  .face-front  { transform: translateZ(100px); }
+  .face-back   { transform: rotateY(180deg) translateZ(100px); }
+  .face-left   { transform: rotateY(-90deg) translateZ(100px); }
+  .face-right  { transform: rotateY(90deg) translateZ(100px); }
+  .face-top    { transform: rotateX(90deg) translateZ(100px); }
+  .face-bottom { transform: rotateX(-90deg) translateZ(100px); }
+
+  @keyframes gradientShift {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  @keyframes cubeFloat {
+    0%    { transform: rotateX(-15deg) rotateY(0deg)   rotateZ(0deg)   translateY(0px)   translateX(0px); }
+    4%    { transform: rotateX(-10deg) rotateY(15deg)  rotateZ(1deg)   translateY(-6px)  translateX(3px); }
+    8%    { transform: rotateX(-3deg)  rotateY(30deg)  rotateZ(3deg)   translateY(-12px) translateX(5px); }
+    12%   { transform: rotateX(5deg)   rotateY(45deg)  rotateZ(2deg)   translateY(-16px) translateX(2px); }
+    16%   { transform: rotateX(12deg)  rotateY(60deg)  rotateZ(-1deg)  translateY(-10px) translateX(-3px); }
+    21%   { transform: rotateX(8deg)   rotateY(75deg)  rotateZ(-3deg)  translateY(-4px)  translateX(-6px); }
+    25%   { transform: rotateX(0deg)   rotateY(90deg)  rotateZ(-2deg)  translateY(2px)   translateX(-4px); }
+    29%   { transform: rotateX(-8deg)  rotateY(105deg) rotateZ(0deg)   translateY(-8px)  translateX(-1px); }
+    33%   { transform: rotateX(-14deg) rotateY(120deg) rotateZ(2deg)   translateY(-14px) translateX(4px); }
+    37%   { transform: rotateX(-6deg)  rotateY(135deg) rotateZ(4deg)   translateY(-18px) translateX(6px); }
+    42%   { transform: rotateX(4deg)   rotateY(150deg) rotateZ(3deg)   translateY(-12px) translateX(3px); }
+    46%   { transform: rotateX(10deg)  rotateY(165deg) rotateZ(1deg)   translateY(-6px)  translateX(-2px); }
+    50%   { transform: rotateX(15deg)  rotateY(180deg) rotateZ(0deg)   translateY(0px)   translateX(-5px); }
+    54%   { transform: rotateX(10deg)  rotateY(195deg) rotateZ(-2deg)  translateY(-5px)  translateX(-6px); }
+    58%   { transform: rotateX(3deg)   rotateY(210deg) rotateZ(-4deg)  translateY(-11px) translateX(-3px); }
+    62%   { transform: rotateX(-5deg)  rotateY(225deg) rotateZ(-3deg)  translateY(-17px) translateX(1px); }
+    67%   { transform: rotateX(-12deg) rotateY(240deg) rotateZ(-1deg)  translateY(-13px) translateX(5px); }
+    71%   { transform: rotateX(-8deg)  rotateY(255deg) rotateZ(1deg)   translateY(-7px)  translateX(6px); }
+    75%   { transform: rotateX(0deg)   rotateY(270deg) rotateZ(3deg)   translateY(-2px)  translateX(4px); }
+    79%   { transform: rotateX(7deg)   rotateY(285deg) rotateZ(2deg)   translateY(-9px)  translateX(1px); }
+    83%   { transform: rotateX(13deg)  rotateY(300deg) rotateZ(0deg)   translateY(-15px) translateX(-3px); }
+    87%   { transform: rotateX(6deg)   rotateY(315deg) rotateZ(-2deg)  translateY(-10px) translateX(-5px); }
+    92%   { transform: rotateX(-4deg)  rotateY(335deg) rotateZ(-3deg)  translateY(-5px)  translateX(-4px); }
+    96%   { transform: rotateX(-10deg) rotateY(350deg) rotateZ(-1deg)  translateY(-2px)  translateX(-1px); }
+    100%  { transform: rotateX(-15deg) rotateY(360deg) rotateZ(0deg)   translateY(0px)   translateX(0px); }
+  }
+
+  @keyframes stagePulse {
+    0%   { transform: scale(1); }
+    20%  { transform: scale(1.12); }
+    40%  { transform: scale(0.96); }
+    60%  { transform: scale(1.07); }
+    80%  { transform: scale(0.98); }
+    100% { transform: scale(1); }
+  }
+
+  /* ── Particle ring ──────────────────────────── */
+  .particles {
+    position: absolute;
+    width: 360px; height: 360px;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 1;
+  }
+  .particles .dot {
+    position: absolute;
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: var(--accent2);
+    opacity: 0.5;
+    animation: orbit var(--t, 8s) linear infinite;
+  }
+  @keyframes orbit {
+    from { transform: rotate(0deg) translateX(var(--r, 160px)) rotate(0deg); }
+    to   { transform: rotate(360deg) translateX(var(--r, 160px)) rotate(-360deg); }
+  }
+
+  /* ── Status Text ────────────────────────────── */
+  .status-area {
+    margin-top: 40px;
+    text-align: center;
+    z-index: 2;
+    min-height: 80px;
+  }
+  .status-label {
+    font-size: 13px;
+    color: var(--text2);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .transcript {
+    font-size: 16px;
+    color: var(--text);
+    max-width: 600px;
+    margin: 0 auto;
+    line-height: 1.5;
+    min-height: 24px;
+  }
+  .transcript.user-speech {
+    color: var(--accent2);
+    font-style: italic;
+  }
+
+  /* ── Controls ───────────────────────────────── */
+  .controls {
+    position: absolute;
+    bottom: 40px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    z-index: 10;
+  }
+
+  .mic-btn {
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    border: 2px solid var(--accent2);
+    background: rgba(0,212,170,0.08);
+    color: var(--accent2);
+    font-size: 28px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.3s ease;
+    position: relative;
+  }
+  .mic-btn:hover {
+    background: rgba(0,212,170,0.15);
+    box-shadow: 0 0 30px rgba(0,212,170,0.2);
+  }
+  .mic-btn.active {
+    border-color: var(--danger);
+    background: rgba(239,68,68,0.12);
+    color: var(--danger);
+    animation: micPulse 1.5s ease-in-out infinite;
+  }
+  .mic-btn.active::after {
+    content: '';
+    position: absolute; inset: -6px;
+    border-radius: 50%;
+    border: 2px solid rgba(239,68,68,0.3);
+    animation: micRing 1.5s ease-in-out infinite;
+  }
+
+  @keyframes micPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.3); }
+    50%      { box-shadow: 0 0 20px 8px rgba(239,68,68,0.15); }
+  }
+  @keyframes micRing {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50%      { transform: scale(1.15); opacity: 0.3; }
+  }
+
+  .text-input-wrap {
+    display: flex; gap: 8px;
+  }
+  .text-input-wrap input {
+    width: 320px;
+    padding: 12px 16px;
+    border-radius: 24px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text);
+    font-family: 'Sora', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color .2s;
+  }
+  .text-input-wrap input:focus { border-color: var(--accent); }
+  .text-input-wrap input::placeholder { color: var(--text2); }
+  .text-input-wrap button {
+    padding: 12px 20px;
+    border-radius: 24px;
+    border: 1px solid var(--accent);
+    background: rgba(108,99,255,0.1);
+    color: var(--accent);
+    font-family: 'Sora', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .text-input-wrap button:hover {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  /* ── Conversation Mode Button ─────────────── */
+  .convo-btn {
+    padding: 14px 28px;
+    border-radius: 36px;
+    border: 2px solid var(--accent);
+    background: rgba(108,99,255,0.08);
+    color: var(--accent);
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+  .convo-btn:hover {
+    background: rgba(108,99,255,0.18);
+    box-shadow: 0 0 25px rgba(108,99,255,0.15);
+  }
+  .convo-btn.active {
+    border-color: var(--accent2);
+    background: rgba(0,212,170,0.1);
+    color: var(--accent2);
+    box-shadow: 0 0 25px rgba(0,212,170,0.15);
+    animation: convoPulse 2s ease-in-out infinite;
+  }
+  @keyframes convoPulse {
+    0%, 100% { box-shadow: 0 0 25px rgba(0,212,170,0.15); }
+    50%      { box-shadow: 0 0 35px rgba(0,212,170,0.25); }
+  }
+
+  /* ── Transcript Panel ────────────────────────── */
+  .transcript-panel {
+    position: fixed;
+    left: 24px;
+    bottom: 24px;
+    width: 360px;
+    max-height: 420px;
+    background: rgba(17,24,39,0.94);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    z-index: 50;
+    backdrop-filter: blur(16px);
+    opacity: 0;
+    transform: translateY(20px);
+    pointer-events: none;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .transcript-panel.visible {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+  .transcript-header {
+    flex-shrink: 0;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text2);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .transcript-header .clear-btn {
+    font-size: 11px;
+    color: var(--text2);
+    cursor: pointer;
+    background: none;
+    border: none;
+    font-family: 'Sora', sans-serif;
+    padding: 2px 10px;
+    border-radius: 4px;
+    transition: color 0.2s, background 0.2s;
+  }
+  .transcript-header .clear-btn:hover {
+    color: var(--danger);
+    background: rgba(239,68,68,0.08);
+  }
+  .transcript-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 60px;
+    max-height: 350px;
+  }
+  .transcript-body::-webkit-scrollbar { width: 4px; }
+  .transcript-body::-webkit-scrollbar-track { background: transparent; }
+  .transcript-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+  .t-msg {
+    font-size: 13px;
+    line-height: 1.55;
+    padding: 10px 14px;
+    border-radius: 12px;
+    max-width: 92%;
+    word-wrap: break-word;
+    animation: msgFadeIn 0.3s ease;
+  }
+  @keyframes msgFadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .t-msg.user {
+    background: rgba(0,212,170,0.06);
+    border: 1px solid rgba(0,212,170,0.12);
+    color: var(--accent2);
+    align-self: flex-end;
+  }
+  .t-msg.assistant {
+    background: rgba(108,99,255,0.06);
+    border: 1px solid rgba(108,99,255,0.12);
+    color: var(--text);
+    align-self: flex-start;
+  }
+  .t-msg .t-role {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    margin-bottom: 3px;
+    opacity: 0.5;
+  }
+  .t-msg.user .t-role { color: var(--accent2); }
+  .t-msg.assistant .t-role { color: var(--accent); }
+
+  /* ── Modals ─────────────────────────────────── */
+  .modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6); z-index: 1000;
+    align-items: center; justify-content: center;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 32px;
+    max-width: 440px; width: 90%;
+  }
+  .modal h3 { margin-bottom: 12px; }
+  .modal p { font-size: 13px; color: var(--text2); margin-bottom: 16px; line-height: 1.5; }
+  .modal input {
+    width: 100%; padding: 10px 14px;
+    border-radius: 8px; border: 1px solid var(--border);
+    background: var(--bg); color: var(--text);
+    font-family: 'Sora', sans-serif; font-size: 13px;
+    outline: none; margin-bottom: 16px;
+  }
+  .modal .btn-row { display: flex; gap: 10px; justify-content: flex-end; }
+  .modal .btn {
+    padding: 8px 20px; border-radius: 8px;
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--surface2); color: var(--text);
+    transition: all .2s;
+  }
+  .modal .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  /* ── Order Popup ─────────────────────────────── */
+  .order-overlay {
+    display: none;
+    position: fixed; inset: 0; z-index: 200;
+    background: rgba(0,0,0,.55); backdrop-filter: blur(4px);
+    align-items: center; justify-content: center;
+    animation: orderFadeIn .15s ease;
+  }
+  .order-overlay.show { display: flex; }
+  @keyframes orderFadeIn { from{opacity:0} to{opacity:1} }
+  .order-panel {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; min-width: 420px; max-width: 700px;
+    width: 92vw; max-height: 85vh; display: flex; flex-direction: column;
+    box-shadow: 0 12px 40px rgba(0,0,0,.5);
+    animation: orderSlideUp .2s ease;
+  }
+  @keyframes orderSlideUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:none} }
+  .order-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 24px; border-bottom: 1px solid var(--border);
+  }
+  .order-header h3 { font-size: 15px; margin: 0; display: flex; align-items: center; gap: 10px; }
+  .order-header .po-badge {
+    font-size: 11px; padding: 3px 10px; border-radius: 6px;
+    background: rgba(0,212,170,.1); color: var(--accent2); font-weight: 600;
+  }
+  .order-header .order-close {
+    background: none; border: none; color: var(--text2); font-size: 18px;
+    cursor: pointer; padding: 4px 8px; border-radius: 6px; transition: all .15s;
+  }
+  .order-header .order-close:hover { color: var(--text); background: var(--surface2); }
+  .order-body { overflow-y: auto; padding: 0; flex: 1; }
+  .order-body iframe {
+    width: 100%; height: 65vh; border: none; border-radius: 0;
+    background: #fff;
+  }
+  .order-body .order-loading {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 60px 20px;
+    color: var(--text2); font-size: 13px;
+  }
+  .order-body .order-loading .spinner {
+    width: 32px; height: 32px; border: 3px solid var(--border);
+    border-top-color: var(--accent); border-radius: 50%;
+    animation: spin .8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .order-body .order-error {
+    padding: 40px 24px; text-align: center; color: var(--text2);
+  }
+  .order-body .order-error .glyph { font-size: 32px; margin-bottom: 12px; }
+  .order-body .order-error h4 { color: var(--text); margin-bottom: 8px; }
+  .order-warnings {
+    display: none; padding: 12px 24px; font-size: 12px;
+    background: rgba(245,158,11,.06); color: #f59e0b;
+    border-top: 1px solid rgba(245,158,11,.15); line-height: 1.6;
+  }
+  .order-footer {
+    display: flex; align-items: center; justify-content: flex-end;
+    gap: 10px; padding: 12px 24px; border-top: 1px solid var(--border);
+  }
+  .order-footer button {
+    padding: 8px 18px; border-radius: 8px; font-size: 12px;
+    font-weight: 600; cursor: pointer; border: 1px solid var(--border);
+    background: var(--surface2); color: var(--text); font-family: 'Sora', sans-serif;
+    transition: all .15s;
+  }
+  .order-footer button:hover { border-color: var(--accent); background: var(--surface); }
+  .order-footer button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .order-footer button:disabled { opacity: .35; cursor: default; }
+</style>
+</head>
+<body>
+
+<!-- ── Top Navigation ──────────────────────────── -->
+<div class="topnav">
+  <div class="logo">Agnes<span>TheSecond</span></div>
+  <a href="/">Chat</a>
+  <a href="/cube/" class="active">Cube</a>
+  <a href="/explorer/">Explorer</a>
+  <a href="/agnes/">Insights</a>
+  <a href="/sourcing/">Sourcing</a>
+  <div class="spacer"></div>
+  <div class="key-group">
+    <div class="key-status" onclick="openModal('keyModal')" title="OpenAI API Key">
+      <div class="dot" id="openaiDot"></div>
+      <span id="openaiLabel">OpenAI key</span>
+    </div>
+    <div class="key-status" onclick="openModal('elevenModal')" title="ElevenLabs API Key">
+      <div class="dot" id="elevenDot"></div>
+      <span id="elevenLabel">ElevenLabs key</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── Main Scene ──────────────────────────────── -->
+<div class="scene-wrap">
+  <div class="ambient-glow" id="glow"></div>
+
+  <!-- Particle ring -->
+  <div class="particles" id="particles"></div>
+
+  <!-- 3D Cube -->
+  <div class="cube-stage">
+    <div class="cube" id="cube">
+      <div class="cube-face face-front"></div>
+      <div class="cube-face face-back"></div>
+      <div class="cube-face face-left"></div>
+      <div class="cube-face face-right"></div>
+      <div class="cube-face face-top"></div>
+      <div class="cube-face face-bottom"></div>
+    </div>
+  </div>
+
+  <!-- Status -->
+  <div class="status-area">
+    <div class="status-label" id="statusLabel">IDLE</div>
+    <div class="transcript" id="transcript">Click the microphone or type to talk to Agnes</div>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <button class="convo-btn" id="convoBtn" onclick="toggleConvoMode()">Start Conversation</button>
+    <button class="mic-btn" id="micBtn" onclick="toggleMic()" title="Push to talk">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+        <line x1="12" y1="19" x2="12" y2="23"/>
+        <line x1="8" y1="23" x2="16" y2="23"/>
+      </svg>
+    </button>
+    <div class="text-input-wrap">
+      <input id="textInput" placeholder="Or type your question…"
+             onkeydown="if(event.key==='Enter'){event.preventDefault();sendText();}">
+      <button onclick="sendText()">Send</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Transcript Panel ──────────────────────────── -->
+<div class="transcript-panel" id="transcriptPanel">
+  <div class="transcript-header">
+    <span>Conversation</span>
+    <button class="clear-btn" onclick="clearTranscript()">Clear</button>
+  </div>
+  <div class="transcript-body" id="transcriptBody"></div>
+</div>
+
+<!-- ── OpenAI Key Modal ───────────────────────── -->
+<div class="modal-overlay" id="keyModal">
+  <div class="modal">
+    <h3>OpenAI API Key</h3>
+    <p>Required for the AI agent. Stored only in your browser.</p>
+    <input type="password" id="openaiKeyInput" placeholder="sk-..." autocomplete="off">
+    <div class="btn-row">
+      <button class="btn" onclick="closeModal('keyModal')">Cancel</button>
+      <button class="btn primary" onclick="saveOpenAIKey()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── ElevenLabs Key Modal ───────────────────── -->
+<div class="modal-overlay" id="elevenModal">
+  <div class="modal">
+    <h3>ElevenLabs API Key</h3>
+    <p>Required for voice synthesis. Get one free at <a href="https://elevenlabs.io" target="_blank" style="color:var(--accent2)">elevenlabs.io</a>.</p>
+    <input type="password" id="elevenKeyInput" placeholder="xi-..." autocomplete="off">
+    <label style="display:block;margin-bottom:16px;">
+      <span style="font-size:12px;color:var(--text2);">Voice ID (optional — defaults to Rachel):</span>
+      <input id="voiceIdInput" placeholder="21m00Tcm4TlvDq8ikWAM" autocomplete="off"
+             style="margin-top:4px;">
+    </label>
+    <div class="btn-row">
+      <button class="btn" onclick="closeModal('elevenModal')">Cancel</button>
+      <button class="btn primary" onclick="saveElevenKey()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Order Popup ─────────────────────────────── -->
+<div class="order-overlay" id="orderOverlay">
+  <div class="order-panel">
+    <div class="order-header">
+      <h3>📋 Purchase Order <span class="po-badge" id="orderPoBadge"></span></h3>
+      <button class="order-close" onclick="closeOrderPopup()">✕</button>
+    </div>
+    <div class="order-body" id="orderBody">
+      <div class="order-loading"><div class="spinner"></div><div>Drafting purchase order…</div></div>
+    </div>
+    <div class="order-warnings" id="orderWarnings"></div>
+    <div class="order-footer">
+      <button onclick="closeOrderPopup()">Close</button>
+      <button class="primary" id="orderDownloadBtn" disabled onclick="downloadCubeOrder()">⬇ Download PDF</button>
+      <button class="primary" id="orderPlaceBtn" disabled onclick="placeCubeOrder()" style="background:#22c55e;border-color:#22c55e">Place Order</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════
+//  State
+// ══════════════════════════════════════════════════
+const cube = document.getElementById('cube');
+const cubeStage = cube.parentElement;
+const glow = document.getElementById('glow');
+const statusLabel = document.getElementById('statusLabel');
+const transcriptEl = document.getElementById('transcript');
+const micBtn = document.getElementById('micBtn');
+const convoBtn = document.getElementById('convoBtn');
+const transcriptPanel = document.getElementById('transcriptPanel');
+const transcriptBody = document.getElementById('transcriptBody');
+
+let conversationHistory = [];
+let isBusy = false;
+let isListening = false;
+let convoMode = false;
+let recognition = null;
+let currentAudio = null;
+let currentAbort = null;  // AbortController for in-flight fetch
+let thinkingTimer = null; // clearInterval handle
+let micCancelled = false; // true when user manually clicks mic off
+
+// ══════════════════════════════════════════════════
+//  Keys
+// ══════════════════════════════════════════════════
+function getOpenAIKey()  { return localStorage.getItem('agnes_api_key') || ''; }
+function getElevenKey()  { return localStorage.getItem('agnes_eleven_key') || ''; }
+function getVoiceId()    { return localStorage.getItem('agnes_voice_id') || '21m00Tcm4TlvDq8ikWAM'; }
+
+function saveOpenAIKey() {
+  const k = document.getElementById('openaiKeyInput').value.trim();
+  if (k) localStorage.setItem('agnes_api_key', k);
+  updateDots(); closeModal('keyModal');
+}
+function saveElevenKey() {
+  const k = document.getElementById('elevenKeyInput').value.trim();
+  const v = document.getElementById('voiceIdInput').value.trim();
+  if (k) localStorage.setItem('agnes_eleven_key', k);
+  if (v) localStorage.setItem('agnes_voice_id', v);
+  updateDots(); closeModal('elevenModal');
+}
+function updateDots() {
+  const oaiOk = !!getOpenAIKey();
+  const elOk  = !!getElevenKey();
+  document.getElementById('openaiDot').classList.toggle('ok', oaiOk);
+  document.getElementById('openaiLabel').textContent = oaiOk ? 'OpenAI ✓' : 'OpenAI key';
+  document.getElementById('elevenDot').classList.toggle('ok', elOk);
+  document.getElementById('elevenLabel').textContent = elOk ? 'ElevenLabs ✓' : 'ElevenLabs key';
+}
+function openModal(id)  { document.getElementById(id).classList.add('show'); }
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+// ══════════════════════════════════════════════════
+//  Particles
+// ══════════════════════════════════════════════════
+(function initParticles() {
+  const cont = document.getElementById('particles');
+  for (let i = 0; i < 18; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot';
+    const dur = 6 + Math.random() * 10;
+    const rad = 140 + Math.random() * 50;
+    const size = 2 + Math.random() * 4;
+    const delay = -Math.random() * dur;
+    d.style.cssText = `
+      --t: ${dur}s; --r: ${rad}px;
+      width: ${size}px; height: ${size}px;
+      top: 50%; left: 50%;
+      margin-left: ${-size/2}px; margin-top: ${-size/2}px;
+      animation-delay: ${delay}s;
+      opacity: ${0.2 + Math.random() * 0.5};
+      background: ${Math.random() > 0.5 ? 'var(--accent)' : 'var(--accent2)'};
+    `;
+    cont.appendChild(d);
+  }
+})();
+
+// ══════════════════════════════════════════════════
+//  Cube State Transitions
+// ══════════════════════════════════════════════════
+function setCubeState(state) {
+  cube.className = 'cube ' + state;
+  glow.className = 'ambient-glow ' + state;
+  if (state === 'speaking') {
+    cubeStage.classList.add('pulsing');
+  } else {
+    cubeStage.classList.remove('pulsing');
+  }
+  if (!state || state === '') statusLabel.textContent = 'IDLE';
+  else if (state !== 'thinking') statusLabel.textContent = state.toUpperCase();
+}
+
+// ══════════════════════════════════════════════════
+//  Transcript Panel (sessionStorage)
+// ══════════════════════════════════════════════════
+function escapeHtml(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+function saveConversationHistory() {
+  sessionStorage.setItem('agnes_conv_history', JSON.stringify(conversationHistory));
+}
+
+function loadConversationHistory() {
+  const stored = JSON.parse(sessionStorage.getItem('agnes_conv_history') || '[]');
+  if (stored.length) conversationHistory = stored;
+}
+
+function addTranscriptMsg(role, text) {
+  const div = document.createElement('div');
+  div.className = 't-msg ' + role;
+  const label = role === 'user' ? 'You' : 'Agnes';
+  div.innerHTML = '<div class="t-role">' + label + '</div><div>' + escapeHtml(text) + '</div>';
+  transcriptBody.appendChild(div);
+  transcriptBody.scrollTop = transcriptBody.scrollHeight;
+
+  const stored = JSON.parse(sessionStorage.getItem('agnes_transcript') || '[]');
+  stored.push({ role, text, ts: Date.now() });
+  sessionStorage.setItem('agnes_transcript', JSON.stringify(stored));
+
+  transcriptPanel.classList.add('visible');
+}
+
+function loadTranscript() {
+  const stored = JSON.parse(sessionStorage.getItem('agnes_transcript') || '[]');
+  if (stored.length === 0) return;
+  transcriptBody.innerHTML = '';
+  stored.forEach(entry => {
+    const div = document.createElement('div');
+    div.className = 't-msg ' + entry.role;
+    const label = entry.role === 'user' ? 'You' : 'Agnes';
+    div.innerHTML = '<div class="t-role">' + label + '</div><div>' + escapeHtml(entry.text) + '</div>';
+    transcriptBody.appendChild(div);
+    conversationHistory.push({ role: entry.role, content: entry.text });
+  });
+  transcriptBody.scrollTop = transcriptBody.scrollHeight;
+  transcriptPanel.classList.add('visible');
+}
+
+function clearTranscript() {
+  sessionStorage.removeItem('agnes_transcript');
+  sessionStorage.removeItem('agnes_conv_history');
+  transcriptBody.innerHTML = '';
+  conversationHistory = [];
+  if (!convoMode) transcriptPanel.classList.remove('visible');
+}
+
+// ══════════════════════════════════════════════════
+//  Force Stop (abort fetch, stop audio, stop speech)
+// ══════════════════════════════════════════════════
+function forceStop() {
+  // Abort in-flight API request
+  if (currentAbort) { try { currentAbort.abort(); } catch(e) {} currentAbort = null; }
+  // Stop TTS audio
+  if (currentAudio) { currentAudio.pause(); currentAudio.src = ''; currentAudio = null; }
+  // Stop browser speechSynthesis
+  if (window.speechSynthesis) speechSynthesis.cancel();
+  // Clear thinking timer
+  if (thinkingTimer) { clearInterval(thinkingTimer); thinkingTimer = null; }
+  // Reset busy state
+  isBusy = false;
+  stopListening();
+  setCubeState('');
+}
+
+// ══════════════════════════════════════════════════
+//  Conversation Mode
+// ══════════════════════════════════════════════════
+function toggleConvoMode() {
+  if (convoMode) {
+    // END conversation — force-stop everything
+    convoMode = false;
+    convoBtn.classList.remove('active');
+    convoBtn.textContent = 'Start Conversation';
+    forceStop();
+    // Show "conversation ended" message
+    transcriptEl.className = 'transcript';
+    transcriptEl.textContent = 'The conversation has ended.';
+    addTranscriptMsg('assistant', 'The conversation has ended.');
+    statusLabel.textContent = 'IDLE';
+    return;
+  }
+  // START conversation
+  convoMode = true;
+  convoBtn.classList.add('active');
+  convoBtn.textContent = 'End Conversation';
+  transcriptPanel.classList.add('visible');
+  startListening();
+}
+
+// ══════════════════════════════════════════════════
+//  Speech Recognition (browser native)
+// ══════════════════════════════════════════════════
+function initRecognition() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return null;
+  const r = new SR();
+  r.continuous = false;
+  r.interimResults = true;
+
+  r.onresult = (e) => {
+    let interim = '', final = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      if (e.results[i].isFinal) {
+        final += e.results[i][0].transcript;
+      } else {
+        interim += e.results[i][0].transcript;
+      }
+    }
+    transcriptEl.className = 'transcript user-speech';
+    transcriptEl.textContent = final || interim || '…';
+    if (final && !micCancelled) {
+      stopListening();
+      processMessage(final.trim());
+    }
+  };
+
+  r.onerror = (e) => {
+    console.warn('SpeechRecognition error:', e.error);
+    if (e.error === 'no-speech') {
+      if ((convoMode || isListening) && !isBusy) {
+        try { r.start(); } catch(err) {}
+      } else {
+        stopListening();
+      }
+    } else if (e.error === 'aborted') {
+      // Intentional abort
+    } else {
+      stopListening();
+      if (convoMode && !isBusy) {
+        setTimeout(() => startListening(), 500);
+      }
+    }
+  };
+
+  r.onend = () => {
+    if (isListening && !isBusy) {
+      try { r.start(); } catch(e) {
+        setTimeout(() => {
+          if (isListening && !isBusy) try { r.start(); } catch(e2) {}
+        }, 200);
+      }
+    }
+  };
+
+  return r;
+}
+
+function toggleMic() {
+  if (isBusy) return;
+  if (convoMode) { toggleConvoMode(); return; }
+  if (isListening) {
+    micCancelled = true;
+    stopListening();
+    transcriptEl.textContent = '';
+  } else {
+    micCancelled = false;
+    startListening();
+  }
+}
+
+function startListening() {
+  // Stop any playing audio first
+  if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+
+  if (!recognition) recognition = initRecognition();
+  if (!recognition) {
+    alert('Speech recognition is not supported in this browser. Try Chrome.');
+    return;
+  }
+  isListening = true;
+  micCancelled = false;
+  micBtn.classList.add('active');
+  setCubeState('listening');
+  transcriptEl.className = 'transcript user-speech';
+  transcriptEl.textContent = 'Listening…';
+  try { recognition.start(); } catch(e) {}
+}
+
+function stopListening() {
+  isListening = false;
+  micBtn.classList.remove('active');
+  if (recognition) try { recognition.stop(); } catch(e) {}
+  if (!isBusy) setCubeState('');
+}
+
+// ══════════════════════════════════════════════════
+//  Text Input
+// ══════════════════════════════════════════════════
+function sendText() {
+  const input = document.getElementById('textInput');
+  const msg = input.value.trim();
+  if (!msg || isBusy) return;
+  input.value = '';
+  processMessage(msg);
+}
+
+// ══════════════════════════════════════════════════
+//  Core: Process Message → Agent → TTS
+// ══════════════════════════════════════════════════
+async function processMessage(text) {
+  if (isBusy) return;
+  isBusy = true;
+
+  const key = getOpenAIKey();
+  if (!key) { openModal('keyModal'); isBusy = false; return; }
+
+  // Add user message to transcript panel
+  addTranscriptMsg('user', text);
+  transcriptEl.className = 'transcript user-speech';
+  transcriptEl.textContent = '"' + text + '"';
+
+  conversationHistory.push({ role: 'user', content: text });
+  saveConversationHistory();
+  persistCubeMessage('user', text);
+
+  // ── Fast-path: order intent → skip agent, go straight to order ──
+  if (detectsOrderIntent(text)) {
+    clearInterval(thinkingTimer); thinkingTimer = null;
+    const orderReply = 'Sure! I\'m preparing your purchase order now. One moment.';
+    conversationHistory.push({ role: 'assistant', content: orderReply });
+    saveConversationHistory();
+    persistCubeMessage('assistant', orderReply);
+    addTranscriptMsg('assistant', orderReply);
+    transcriptEl.className = 'transcript';
+    transcriptEl.textContent = orderReply;
+    setCubeState('speaking');
+    await speakWithElevenLabs(orderReply);
+    isBusy = false;
+    generateCubeOrder();
+    if (convoMode) setTimeout(() => startListening(), 300);
+    return;
+  }
+
+  // Thinking with live timer
+  setCubeState('thinking');
+  const t0 = Date.now();
+  thinkingTimer = setInterval(() => {
+    const sec = Math.round((Date.now() - t0) / 1000);
+    statusLabel.textContent = 'THINKING \u00b7 ' + sec + 's';
+  }, 500);
+
+  try {
+    currentAbort = new AbortController();
+    const res = await fetch('/cube/api/voice-chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: text,
+        history: conversationHistory,
+        api_key: key,
+      }),
+      signal: currentAbort.signal,
+    });
+    currentAbort = null;
+    const data = await res.json();
+    clearInterval(thinkingTimer); thinkingTimer = null;
+    if (data.error) throw new Error(data.error);
+
+    const reply = data.reply;
+
+    conversationHistory.push({ role: 'assistant', content: reply });
+    saveConversationHistory();
+    persistCubeMessage('assistant', reply);
+    const voiceText = stripMarkdown(reply);
+
+    // Add Agnes reply to transcript panel
+    addTranscriptMsg('assistant', voiceText);
+    transcriptEl.className = 'transcript';
+    transcriptEl.textContent = voiceText.length > 200
+      ? voiceText.slice(0, 200) + '\u2026'
+      : voiceText;
+
+    await speakWithElevenLabs(voiceText);
+  } catch (err) {
+    clearInterval(thinkingTimer); thinkingTimer = null;
+    currentAbort = null;
+    if (err.name === 'AbortError') {
+      // User ended conversation — silently stop
+      isBusy = false;
+      return;
+    }
+    console.error('Agent error:', err);
+    transcriptEl.className = 'transcript';
+    transcriptEl.textContent = 'Error: ' + err.message;
+    setCubeState('');
+  }
+
+  isBusy = false;
+
+  // Auto-resume listening in conversation mode
+  if (convoMode) {
+    setTimeout(() => startListening(), 300);
+  }
+}
+
+function stripMarkdown(md) {
+  return md
+    .replace(/#{1,6}\s?/g, '')
+    .replace(/\*\*(.+?)\*\*/g, '$1')
+    .replace(/\*(.+?)\*/g, '$1')
+    .replace(/`{1,3}[^`]*`{1,3}/g, '')
+    .replace(/\|[^\n]+\|/g, '')
+    .replace(/[-*]\s/g, '')
+    .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1')
+    .replace(/\n{2,}/g, '. ')
+    .replace(/\n/g, ' ')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
+// ══════════════════════════════════════════════════
+//  ElevenLabs TTS
+// ══════════════════════════════════════════════════
+async function speakWithElevenLabs(text) {
+  const apiKey = getElevenKey();
+
+  // Truncate for TTS (ElevenLabs has limits)
+  const ttsText = text.length > 2500 ? text.slice(0, 2500) + '...' : text;
+
+  if (!apiKey) {
+    // Fallback to browser TTS
+    return speakBrowser(ttsText);
+  }
+
+  const voiceId = getVoiceId();
+  setCubeState('speaking');
+
+  try {
+    const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'xi-api-key': apiKey,
+      },
+      body: JSON.stringify({
+        text: ttsText,
+        model_id: 'eleven_multilingual_v2',
+        voice_settings: {
+          stability: 0.5,
+          similarity_boost: 0.75,
+          style: 0.3,
+          use_speaker_boost: true,
+        }
+      }),
+    });
+
+    if (!res.ok) {
+      console.warn('ElevenLabs error, falling back to browser TTS');
+      return speakBrowser(ttsText);
+    }
+
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    return new Promise((resolve) => {
+      const audio = new Audio(url);
+      currentAudio = audio;
+      audio.onended = () => {
+        currentAudio = null;
+        URL.revokeObjectURL(url);
+        setCubeState('');
+        resolve();
+      };
+      audio.onerror = () => {
+        currentAudio = null;
+        URL.revokeObjectURL(url);
+        setCubeState('');
+        resolve();
+      };
+      audio.play().catch(() => {
+        setCubeState('');
+        resolve();
+      });
+    });
+  } catch (err) {
+    console.warn('ElevenLabs fetch error, falling back:', err);
+    return speakBrowser(ttsText);
+  }
+}
+
+function speakBrowser(text) {
+  return new Promise((resolve) => {
+    if (!window.speechSynthesis) { setCubeState(''); resolve(); return; }
+    setCubeState('speaking');
+    const utter = new SpeechSynthesisUtterance(text.slice(0, 500));
+    utter.rate = 1.0;
+    utter.pitch = 1.0;
+    utter.onend = () => { setCubeState(''); resolve(); };
+    utter.onerror = () => { setCubeState(''); resolve(); };
+    speechSynthesis.speak(utter);
+  });
+}
+
+// ══════════════════════════════════════════════════
+//  Gradient angle animation (CSS custom property)
+// ══════════════════════════════════════════════════
+(function animateGradAngle() {
+  let angle = 0;
+  const faces = document.querySelectorAll('.cube-face');
+  function tick() {
+    angle = (angle + 0.5) % 360;
+    faces.forEach((f, i) => {
+      f.style.setProperty('--grad-angle', (angle + i * 60) + 'deg');
+    });
+    requestAnimationFrame(tick);
+  }
+  tick();
+})();
+
+// ══════════════════════════════════════════════════
+//  Order System — Session + Persist + Generate
+// ══════════════════════════════════════════════════
+function getCubeSessionId() {
+  let sid = sessionStorage.getItem('agnes_cube_session_id');
+  if (!sid) {
+    sid = (crypto.randomUUID && crypto.randomUUID()) ||
+          ('csid-' + Date.now() + '-' + Math.random().toString(16).slice(2, 10));
+    sessionStorage.setItem('agnes_cube_session_id', sid);
+  }
+  return sid;
+}
+
+function persistCubeMessage(role, content) {
+  try {
+    fetch('/orders/save_message', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        session_id: getCubeSessionId(),
+        role, content, source: 'cube',
+      }),
+      keepalive: true,
+    }).catch(() => {});
+  } catch (e) { /* swallow */ }
+}
+
+const ORDER_INTENT_PATTERNS = [
+  /\bplace\s+(an?\s+)?(order|po|purchase[\s-]?order)\b/i,
+  /\bcreate\s+(an?\s+)?(order|po|purchase[\s-]?order)\b/i,
+  /\b(send|issue|draft|generate|make)\s+(an?\s+)?(order|po|purchase[\s-]?order)\b/i,
+  /^\s*(please\s+)?order\b\s+(?!.*\?\s*$)/i,
+  /\bi[' ]?(d|would)\s+like\s+to\s+(order|buy|purchase)\b/i,
+  /\bi\s+want\s+to\s+(order|buy|purchase)\b/i,
+  /\bplease\s+(order|buy|purchase)\b/i,
+  /\b(buy|purchase|procure)\s+\d+/i,
+  /\b(buy|purchase|procure|order)\s+\w+\s+\d+/i,
+  /\b(buy|purchase|order)\s+(those|them|that|these|the)\b/i,
+  /\border\s+\d+/i,
+  /\byes,?\s+(place|create|send)\s+(the|that)\s+(order|po)\b/i,
+  /\bgo\s+ahead.{0,20}\b(order|po|purchase)\b/i,
+];
+
+function detectsOrderIntent(text) {
+  if (!text) return false;
+  return ORDER_INTENT_PATTERNS.some(rx => rx.test(text));
+}
+
+let cubeOrderId = null;
+let cubeOrderInFlight = false;
+
+function openOrderPopup() {
+  document.getElementById('orderOverlay').classList.add('show');
+}
+function closeOrderPopup() {
+  document.getElementById('orderOverlay').classList.remove('show');
+}
+
+function showCubeOrderLoading() {
+  openOrderPopup();
+  document.getElementById('orderBody').innerHTML =
+    '<div class="order-loading"><div class="spinner"></div><div>Drafting purchase order…</div></div>';
+  document.getElementById('orderPoBadge').textContent = '';
+  document.getElementById('orderDownloadBtn').disabled = true;
+  document.getElementById('orderPlaceBtn').disabled = true;
+  document.getElementById('orderPlaceBtn').textContent = 'Place Order';
+  document.getElementById('orderPlaceBtn').style.background = '#22c55e';
+  document.getElementById('orderWarnings').style.display = 'none';
+}
+
+function showCubeOrderError(msg) {
+  openOrderPopup();
+  document.getElementById('orderBody').innerHTML =
+    '<div class="order-error"><div class="glyph">⚠️</div><h4>Could not generate order</h4><p>' +
+    (msg || 'Unknown error').replace(/</g, '&lt;') + '</p></div>';
+}
+
+function renderCubeOrderPdf(orderId, poNumber, draft) {
+  cubeOrderId = orderId;
+  openOrderPopup();
+  const ts = Date.now();
+  document.getElementById('orderBody').innerHTML =
+    '<iframe src="/orders/pdf/' + orderId + '?t=' + ts + '#toolbar=0&navpanes=0"></iframe>';
+  document.getElementById('orderPoBadge').textContent = poNumber;
+  document.getElementById('orderDownloadBtn').disabled = false;
+  document.getElementById('orderPlaceBtn').disabled = false;
+
+  const warn = document.getElementById('orderWarnings');
+  const warnings = (draft && draft.warnings) || [];
+  if (warnings.length) {
+    warn.innerHTML = '<strong>Review before sending:</strong><br>' +
+      warnings.map(w => '• ' + w.replace(/</g, '&lt;')).join('<br>');
+    warn.style.display = 'block';
+  } else {
+    warn.style.display = 'none';
+  }
+}
+
+async function placeCubeOrder() {
+  if (!cubeOrderId) return;
+  const btn = document.getElementById('orderPlaceBtn');
+  btn.disabled = true;
+  btn.textContent = 'Placing…';
+  try {
+    const resp = await fetch('/orders/place/' + cubeOrderId, { method: 'POST' });
+    const data = await resp.json().catch(() => ({}));
+    if (resp.ok && data.ok) {
+      btn.textContent = '✓ Order Placed';
+      btn.style.background = '#16a34a';
+    } else {
+      btn.textContent = 'Failed';
+      btn.disabled = false;
+      setTimeout(function() { btn.textContent = 'Place Order'; }, 2000);
+    }
+  } catch(e) {
+    btn.textContent = 'Failed';
+    btn.disabled = false;
+    setTimeout(function() { btn.textContent = 'Place Order'; }, 2000);
+  }
+}
+
+async function generateCubeOrder() {
+  if (cubeOrderInFlight) return;
+  if (conversationHistory.length === 0) {
+    showCubeOrderError('Chat with Agnes first — tell her what you want to order.');
+    return;
+  }
+  const key = getOpenAIKey();
+  if (!key) { openModal('keyModal'); return; }
+
+  cubeOrderInFlight = true;
+  showCubeOrderLoading();
+  try {
+    const resp = await fetch('/orders/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        session_id: getCubeSessionId(),
+        api_key: key,
+      }),
+    });
+    const data = await resp.json().catch(() => ({}));
+    if (!resp.ok || !data.ok) {
+      showCubeOrderError(data.error || 'Server error (' + resp.status + ')');
+      return;
+    }
+    renderCubeOrderPdf(data.order_id, data.po_number, data.draft || {});
+  } catch (e) {
+    showCubeOrderError('Network error while drafting order.');
+  } finally {
+    cubeOrderInFlight = false;
+  }
+}
+
+function downloadCubeOrder() {
+  if (!cubeOrderId) return;
+  const a = document.createElement('a');
+  a.href = '/orders/pdf/' + cubeOrderId;
+  a.target = '_blank';
+  a.rel = 'noopener';
+  a.click();
+}
+
+// ══════════════════════════════════════════════════
+//  Init
+// ══════════════════════════════════════════════════
+updateDots();
+loadConversationHistory();
+loadTranscript();
+document.getElementById('orderOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeOrderPopup();
+});
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape' && document.getElementById('orderOverlay').classList.contains('show')) {
+    closeOrderPopup();
+  }
+});
+</script>
+</body>
+</html>
