@@ -55,18 +55,6 @@
   .topnav a:hover { color: var(--text); }
   .topnav a.active { color: var(--accent2); border-bottom-color: var(--accent2); }
   .topnav .spacer { flex: 1; }
-  .topnav .key-group {
-    display: flex; align-items: center; gap: 12px;
-  }
-  .topnav .key-status {
-    font-size: 11px; color: var(--text2);
-    display: flex; align-items: center; gap: 6px; cursor: pointer;
-  }
-  .topnav .key-status .dot {
-    width: 8px; height: 8px; border-radius: 50%;
-    background: var(--danger); transition: background .2s;
-  }
-  .topnav .key-status .dot.ok { background: var(--accent2); }
 
   /* ── Scene ──────────────────────────────────── */
   .scene-wrap {
@@ -586,16 +574,6 @@
   <a href="/agnes/">Insights</a>
   <a href="/sourcing/">Sourcing</a>
   <div class="spacer"></div>
-  <div class="key-group">
-    <div class="key-status" onclick="openModal('keyModal')" title="OpenAI API Key">
-      <div class="dot" id="openaiDot"></div>
-      <span id="openaiLabel">OpenAI key</span>
-    </div>
-    <div class="key-status" onclick="openModal('elevenModal')" title="ElevenLabs API Key">
-      <div class="dot" id="elevenDot"></div>
-      <span id="elevenLabel">ElevenLabs key</span>
-    </div>
-  </div>
 </div>
 
 <!-- ── Main Scene ──────────────────────────────── -->
@@ -651,37 +629,6 @@
   <div class="transcript-body" id="transcriptBody"></div>
 </div>
 
-<!-- ── OpenAI Key Modal ───────────────────────── -->
-<div class="modal-overlay" id="keyModal">
-  <div class="modal">
-    <h3>OpenAI API Key</h3>
-    <p>Required for the AI agent. Stored only in your browser.</p>
-    <input type="password" id="openaiKeyInput" placeholder="sk-..." autocomplete="off">
-    <div class="btn-row">
-      <button class="btn" onclick="closeModal('keyModal')">Cancel</button>
-      <button class="btn primary" onclick="saveOpenAIKey()">Save</button>
-    </div>
-  </div>
-</div>
-
-<!-- ── ElevenLabs Key Modal ───────────────────── -->
-<div class="modal-overlay" id="elevenModal">
-  <div class="modal">
-    <h3>ElevenLabs API Key</h3>
-    <p>Required for voice synthesis. Get one free at <a href="https://elevenlabs.io" target="_blank" style="color:var(--accent2)">elevenlabs.io</a>.</p>
-    <input type="password" id="elevenKeyInput" placeholder="xi-..." autocomplete="off">
-    <label style="display:block;margin-bottom:16px;">
-      <span style="font-size:12px;color:var(--text2);">Voice ID (optional — defaults to Rachel):</span>
-      <input id="voiceIdInput" placeholder="21m00Tcm4TlvDq8ikWAM" autocomplete="off"
-             style="margin-top:4px;">
-    </label>
-    <div class="btn-row">
-      <button class="btn" onclick="closeModal('elevenModal')">Cancel</button>
-      <button class="btn primary" onclick="saveElevenKey()">Save</button>
-    </div>
-  </div>
-</div>
-
 <!-- ── Order Popup ─────────────────────────────── -->
 <div class="order-overlay" id="orderOverlay">
   <div class="order-panel">
@@ -726,34 +673,9 @@ let thinkingTimer = null; // clearInterval handle
 let micCancelled = false; // true when user manually clicks mic off
 
 // ══════════════════════════════════════════════════
-//  Keys
+//  Keys (env-var backed — no client-side config needed)
 // ══════════════════════════════════════════════════
-function getOpenAIKey()  { return localStorage.getItem('agnes_api_key') || ''; }
-function getElevenKey()  { return localStorage.getItem('agnes_eleven_key') || ''; }
-function getVoiceId()    { return localStorage.getItem('agnes_voice_id') || '21m00Tcm4TlvDq8ikWAM'; }
-
-function saveOpenAIKey() {
-  const k = document.getElementById('openaiKeyInput').value.trim();
-  if (k) localStorage.setItem('agnes_api_key', k);
-  updateDots(); closeModal('keyModal');
-}
-function saveElevenKey() {
-  const k = document.getElementById('elevenKeyInput').value.trim();
-  const v = document.getElementById('voiceIdInput').value.trim();
-  if (k) localStorage.setItem('agnes_eleven_key', k);
-  if (v) localStorage.setItem('agnes_voice_id', v);
-  updateDots(); closeModal('elevenModal');
-}
-function updateDots() {
-  const oaiOk = !!getOpenAIKey();
-  const elOk  = !!getElevenKey();
-  document.getElementById('openaiDot').classList.toggle('ok', oaiOk);
-  document.getElementById('openaiLabel').textContent = oaiOk ? 'OpenAI ✓' : 'OpenAI key';
-  document.getElementById('elevenDot').classList.toggle('ok', elOk);
-  document.getElementById('elevenLabel').textContent = elOk ? 'ElevenLabs ✓' : 'ElevenLabs key';
-}
-function openModal(id)  { document.getElementById(id).classList.add('show'); }
-function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+function getVoiceId() { return localStorage.getItem('agnes_voice_id') || '21m00Tcm4TlvDq8ikWAM'; }
 
 // ══════════════════════════════════════════════════
 //  Particles
@@ -1009,9 +931,6 @@ async function processMessage(text) {
   if (isBusy) return;
   isBusy = true;
 
-  const key = getOpenAIKey();
-  if (!key) { openModal('keyModal'); isBusy = false; return; }
-
   // Add user message to transcript panel
   addTranscriptMsg('user', text);
   transcriptEl.className = 'transcript user-speech';
@@ -1055,7 +974,6 @@ async function processMessage(text) {
       body: JSON.stringify({
         message: text,
         history: conversationHistory,
-        api_key: key,
       }),
       signal: currentAbort.signal,
     });
@@ -1117,43 +1035,27 @@ function stripMarkdown(md) {
 }
 
 // ══════════════════════════════════════════════════
-//  ElevenLabs TTS
+//  ElevenLabs TTS (via server proxy)
 // ══════════════════════════════════════════════════
 async function speakWithElevenLabs(text) {
-  const apiKey = getElevenKey();
-
   // Truncate for TTS (ElevenLabs has limits)
   const ttsText = text.length > 2500 ? text.slice(0, 2500) + '...' : text;
-
-  if (!apiKey) {
-    // Fallback to browser TTS
-    return speakBrowser(ttsText);
-  }
 
   const voiceId = getVoiceId();
   setCubeState('speaking');
 
   try {
-    const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream`, {
+    const res = await fetch('/cube/api/tts', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'xi-api-key': apiKey,
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         text: ttsText,
-        model_id: 'eleven_multilingual_v2',
-        voice_settings: {
-          stability: 0.5,
-          similarity_boost: 0.75,
-          style: 0.3,
-          use_speaker_boost: true,
-        }
+        voice_id: voiceId,
       }),
     });
 
     if (!res.ok) {
-      console.warn('ElevenLabs error, falling back to browser TTS');
+      console.warn('TTS proxy error, falling back to browser TTS');
       return speakBrowser(ttsText);
     }
 
@@ -1341,8 +1243,6 @@ async function generateCubeOrder() {
     showCubeOrderError('Chat with Agnes first — tell her what you want to order.');
     return;
   }
-  const key = getOpenAIKey();
-  if (!key) { openModal('keyModal'); return; }
 
   cubeOrderInFlight = true;
   showCubeOrderLoading();
@@ -1352,7 +1252,6 @@ async function generateCubeOrder() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         session_id: getCubeSessionId(),
-        api_key: key,
       }),
     });
     const data = await resp.json().catch(() => ({}));
@@ -1380,7 +1279,6 @@ function downloadCubeOrder() {
 // ══════════════════════════════════════════════════
 //  Init
 // ══════════════════════════════════════════════════
-updateDots();
 loadConversationHistory();
 loadTranscript();
 document.getElementById('orderOverlay').addEventListener('click', function(e) {

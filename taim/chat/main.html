@@ -66,22 +66,6 @@
     border-bottom-color: var(--accent2);
   }
   .topnav .spacer { flex: 1; }
-  .topnav .key-status {
-    font-size: 11px;
-    color: var(--text2);
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    cursor: pointer;
-  }
-  .topnav .key-status .dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--danger);
-    transition: background .2s;
-  }
-  .topnav .key-status .dot.ok { background: var(--accent2); }
 
   /* ── Layout: chat full-width by default; split when order is drafted */
   .app-split {
@@ -634,10 +618,6 @@
   <a href="/sourcing/">Sourcing</a>
   <div class="spacer"></div>
   <button class="clear-chat-btn" id="clearChatBtn" onclick="clearChat()" title="Clear conversation">Clear Chat</button>
-  <div class="key-status" onclick="openKeyModal()" title="Configure API Key">
-    <div class="dot" id="keyDot"></div>
-    <span id="keyLabel">No API key</span>
-  </div>
 </div>
 
 <!-- ── Split: chat left, PO panel right ─────────── -->
@@ -679,18 +659,7 @@
   </aside>
 </div>
 
-<!-- ── API Key Modal ──────────────────────────── -->
-<div class="modal-overlay" id="keyModal">
-  <div class="modal">
-    <h3>OpenAI API Key</h3>
-    <p>Enter your OpenAI API key. It stays in your browser's local storage and is sent only to the local Flask server.</p>
-    <input type="password" id="keyInput" placeholder="sk-..." autocomplete="off">
-    <div class="btn-row">
-      <button class="btn" onclick="closeKeyModal()">Cancel</button>
-      <button class="btn primary" onclick="saveKey()">Save</button>
-    </div>
-  </div>
-</div>
+<!-- ── Script ──────────────────────────────────── -->
 
 <script>
 // ── State ──────────────────────────────────────
@@ -760,34 +729,6 @@ function clearChat() {
         <button onclick="askSuggestion(this)">Analyze supply chain risks</button>
       </div>
     </div>`;
-}
-
-function getApiKey() { return localStorage.getItem('agnes_api_key') || ''; }
-function setApiKey(k) { localStorage.setItem('agnes_api_key', k); updateKeyStatus(); }
-
-function updateKeyStatus() {
-  const key = getApiKey();
-  const dot = document.getElementById('keyDot');
-  const label = document.getElementById('keyLabel');
-  if (key) {
-    dot.classList.add('ok');
-    label.textContent = 'API key set';
-  } else {
-    dot.classList.remove('ok');
-    label.textContent = 'No API key';
-  }
-}
-
-function openKeyModal() {
-  document.getElementById('keyModal').classList.add('open');
-  document.getElementById('keyInput').value = getApiKey();
-  document.getElementById('keyInput').focus();
-}
-function closeKeyModal() { document.getElementById('keyModal').classList.remove('open'); }
-function saveKey() {
-  const k = document.getElementById('keyInput').value.trim();
-  setApiKey(k);
-  closeKeyModal();
 }
 
 // ── Auto-resize textarea ───────────────────────
@@ -1041,12 +982,6 @@ async function sendMessage() {
   const text = input.value.trim();
   if (!text) return;
 
-  const key = getApiKey();
-  if (!key) {
-    openKeyModal();
-    return;
-  }
-
   isBusy = true;
   document.getElementById('sendBtn').disabled = true;
   input.value = '';
@@ -1080,7 +1015,6 @@ async function sendMessage() {
       body: JSON.stringify({
         message: text,
         history: conversationHistory.slice(0, -1),
-        api_key: key,
       }),
     });
 
@@ -1235,11 +1169,6 @@ async function generateOrder() {
     showOrderError('Chat with Agnes first — tell her what you want to order.');
     return;
   }
-  const key = getApiKey();
-  if (!key) {
-    openKeyModal();
-    return;
-  }
   orderInFlight = true;
   showOrderLoading();
   try {
@@ -1248,7 +1177,6 @@ async function generateOrder() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         session_id: getSessionId(),
-        api_key: key,
       }),
     });
     const data = await resp.json().catch(() => ({}));
@@ -1274,7 +1202,6 @@ function downloadOrderPdf() {
 }
 
 // ── Init ───────────────────────────────────────
-updateKeyStatus();
 loadChatFromSession();
 document.getElementById('input').focus();
 getSessionId();  // ensure session id exists on first load

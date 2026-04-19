@@ -76,7 +76,7 @@ def generate():
     data = request.get_json(force=True, silent=True) or {}
     session_id = (data.get("session_id") or "").strip()
     api_key = (
-        data.get("api_key")
+        os.environ.get("OPEN_AI_API", "")
         or os.environ.get("OPENAI_API_KEY", "")
         or ""
     ).strip()
@@ -87,12 +87,12 @@ def generate():
             jsonify(
                 {
                     "error": (
-                        "No OpenAI API key available. Set OPENAI_API_KEY or "
-                        "send api_key in the request body."
+                        "No OpenAI API key available. Set OPEN_AI_API "
+                        "environment variable."
                     )
                 }
             ),
-            400,
+            500,
         )
 
     messages = get_messages(session_id)

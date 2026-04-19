@@ -10,7 +10,7 @@ from .agent import run_agent
 
 chat_bp = Blueprint('chat', __name__, url_prefix='/')
 
-API_KEY = os.environ.get('OPENAI_API_KEY', '')
+API_KEY = os.environ.get('OPEN_AI_API', '') or os.environ.get('OPENAI_API_KEY', '')
 
 
 @chat_bp.route('/')
@@ -27,9 +27,8 @@ def chat():
     if not user_message:
         return jsonify({"error": "Empty message"}), 400
 
-    key = data.get('api_key', '') or API_KEY
-    if not key:
-        return jsonify({"error": "No API key. Set OPENAI_API_KEY or pass api_key in body."}), 400
+    if not API_KEY:
+        return jsonify({"error": "No API key configured. Set OPEN_AI_API environment variable."}), 500
 
     # Build conversation history (only keep last 10 exchanges)
     conv_history = []
@@ -39,5 +38,5 @@ def chat():
         if role in ('user', 'assistant') and content:
             conv_history.append({"role": role, "content": content})
 
-    result = run_agent(user_message, conv_history, api_key=key)
+    result = run_agent(user_message, conv_history, api_key=API_KEY)
     return jsonify({"reply": result["reply"], "steps": result["steps"]})

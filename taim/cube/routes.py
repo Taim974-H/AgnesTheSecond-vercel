@@ -8,8 +8,9 @@ and the existing OpenAI chat agent for intelligence.
 import re
 import json
 from datetime import datetime
-from flask import Blueprint, jsonify, request, send_from_directory
+from flask import Blueprint, Response, jsonify, request, send_from_directory
 import os
+import requests as http_requests
 from chat.agent import run_agent
 
 # Use /tmp on Vercel (read-only FS); fall back to local dir otherwise
@@ -30,7 +31,8 @@ def _save_session_log(log):
 
 cube_bp = Blueprint('cube', __name__, url_prefix='/cube')
 
-API_KEY = os.environ.get('OPENAI_API_KEY', '')
+API_KEY = os.environ.get('OPEN_AI_API', '') or os.environ.get('OPENAI_API_KEY', '')
+ELEVEN_KEY = os.environ.get('ELEVEN_LAB_API', '')
 
 # ── Keyword / intent extraction for voice transcriptions ─────────
 
@@ -137,9 +139,8 @@ def voice_chat():
     if not user_message:
         return jsonify({"error": "Empty message"}), 400
 
-    key = data.get('api_key', '') or API_KEY
-    if not key:
-        return jsonify({"error": "No API key. Set OPENAI_API_KEY or pass api_key in body."}), 400
+    if not API_KEY:
+        return jsonify({"error": "No API key configured. Set OPEN_AI_API environment variable."}), 500
 
     conv_history = []
     for h in history[-20:]:
@@ -151,7 +152,7 @@ def voice_chat():
     # Pre-process the spoken transcription into a structured message
     enhanced_message = _preprocess_transcription(user_message)
 
-    result = run_agent(enhanced_message, conv_history, api_key=key, voice_mode=True)
+    result = run_agent(enhanced_message, conv_history, api_key=API_KEY, voice_mode=True)
 
     log = _load_session_log()
     log.append({"role": "user", "content": user_message, "timestamp": datetime.utcnow().isoformat() + "Z"})
@@ -159,3 +160,50 @@ def voice_chat():
     _save_session_log(log)
 
     return jsonify({"reply": result["reply"], "steps": result["steps"]})
+
+
+@cube_bp.route('/api/tts', methods=['POST'])
+def tts_proxy():
+    """Server-side proxy for ElevenLabs TTS so the API key stays secret."""
+    if not ELEVEN_KEY:
+        return jsonify({"error": "ELEVEN_LAB_API not configured"}), 500
+
+    data = request.get_json(force=True)
+    text = (data.get('text') or '').strip()
+    if not text:
+        return jsonify({"error": "text required"}), 400
+
+    voice_id = data.get('voice_id', '21m00Tcm4TlvDq8ikWAM')
+    # Truncate to ElevenLabs limit
+    if len(text) > 2500:
+        text = text[:2500] + '...'
+
+    try:
+        resp = http_requests.post(
+            f'https://api.elevenlabs.io/v1/text-to-speech/{voice_id}/stream',
+            headers={
+                'Content-Type': 'application/json',
+                'xi-api-key': ELEVEN_KEY,
+            },
+            json={
+                'text': text,
+                'model_id': 'eleven_multilingual_v2',
+                'voice_settings': {
+                    'stability': 0.5,
+                    'similarity_boost': 0.75,
+                    'style': 0.3,
+                    'use_speaker_boost': True,
+                },
+            },
+            stream=True,
+            timeout=30,
+        )
+        if resp.status_code != 200:
+            return jsonify({"error": "ElevenLabs error", "status": resp.status_code}), 502
+
+        return Response(
+            resp.iter_content(chunk_size=4096),
+            content_type=resp.headers.get('Content-Type', 'audio/mpeg'),
+        )
+    except Exception as e:
+        return jsonify({"error": str(e)}), 502
