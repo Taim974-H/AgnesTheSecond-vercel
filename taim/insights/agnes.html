@@ -609,6 +609,52 @@ a:hover { text-decoration: underline; }
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* ── Mobile Responsive ──────────────────────── */
+@media (max-width: 768px) {
+  .topnav {
+    padding: 0 12px;
+    gap: 12px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .topnav::-webkit-scrollbar { display: none; }
+  .topnav .logo { font-size: 16px; margin-right: 8px; flex-shrink: 0; }
+  .topnav a { font-size: 12px; white-space: nowrap; padding: 16px 2px; }
+  .content { padding: 16px 12px; }
+  .tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    flex-wrap: nowrap;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab { padding: 8px 12px; font-size: 12px; white-space: nowrap; }
+  .section { padding: 14px 14px; }
+  .section-title { font-size: 13px; }
+  .rec-card { padding: 12px 14px; }
+  .rec-header { flex-wrap: wrap; gap: 8px; }
+  .rec-title { font-size: 13px; }
+  .rec-summary { font-size: 11px; }
+  .evidence-list li { font-size: 11px; }
+  .impact-chips { gap: 4px; }
+  .impact-chip { font-size: 10px; padding: 3px 8px; }
+  .filter-row { gap: 6px; }
+  .filter-btn { font-size: 10px; padding: 4px 10px; }
+  .search-input { font-size: 12px; padding: 8px 10px; }
+  .cat-bar-label { width: 120px; font-size: 11px; }
+  .dim-row { grid-template-columns: 100px 1fr 36px; gap: 6px; font-size: 10px; }
+  .risk-card { padding: 10px 14px; }
+  .sub-group { padding: 10px 14px; }
+  .member-tag { font-size: 10px; padding: 2px 8px; }
+  .xt { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .popup-panel { min-width: unset; width: 96vw; }
+  .popup-body { padding: 10px 12px; }
+  .consol-card { padding: 10px 14px; }
+  .info-tip .info-popup { width: calc(100vw - 40px); }
+  .tension-matrix { padding: 8px; }
+}
 </style>
 </head>
 <body>

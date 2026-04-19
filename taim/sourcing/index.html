@@ -297,6 +297,47 @@
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
   .hidden { display: none !important; }
+
+  /* ── Mobile Responsive ──────────────────────── */
+  @media (max-width: 768px) {
+    .topnav {
+      padding: 0 12px;
+      gap: 12px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .topnav::-webkit-scrollbar { display: none; }
+    .topnav .logo { font-size: 16px; margin-right: 8px; flex-shrink: 0; }
+    .topnav a { font-size: 12px; white-space: nowrap; padding: 16px 2px; }
+    .main { padding: 16px 12px; }
+    .form-card { padding: 16px; border-radius: 12px; }
+    .form-card h2 { font-size: 18px; }
+    .form-card .subtitle { font-size: 12px; }
+    .form-row { flex-direction: column; gap: 12px; }
+    .form-group input { font-size: 13px; padding: 10px 12px; }
+    .tag-input-wrap { padding: 6px 10px; }
+    .tag-input { font-size: 13px; min-width: 80px; }
+    .btn-source { padding: 10px 24px; font-size: 14px; width: 100%; }
+    .summary-bar { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .stat-card { padding: 14px; }
+    .stat-card .value { font-size: 22px; }
+    .stat-card .label { font-size: 10px; }
+    .ingredient-card .ing-header { padding: 14px 16px; gap: 10px; flex-wrap: wrap; }
+    .ing-name { font-size: 14px; }
+    .ing-badges { gap: 4px; }
+    .badge { font-size: 10px; padding: 2px 8px; }
+    .ing-detail { padding: 0 16px 16px; }
+    .sup-table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .benchmark-row { gap: 12px; font-size: 12px; padding: 10px 12px; }
+    .combo-card { padding: 14px; }
+    .combo-strategy { font-size: 13px; }
+    .combo-sup-top { gap: 6px; }
+    .chat-prompt { padding: 14px; }
+    .chat-prompt p { font-size: 12px; }
+    .results-title { font-size: 16px; }
+    .coverage-bar-wrap { width: 80px; }
+  }
 </style>
 </head>
 <body>

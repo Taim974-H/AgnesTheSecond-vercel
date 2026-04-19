@@ -604,6 +604,34 @@
     border-color: var(--danger);
     background: rgba(239,68,68,0.06);
   }
+
+  /* ── Mobile Responsive ──────────────────────── */
+  @media (max-width: 768px) {
+    .topnav {
+      padding: 0 12px;
+      gap: 12px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .topnav::-webkit-scrollbar { display: none; }
+    .topnav .logo { font-size: 16px; margin-right: 8px; flex-shrink: 0; }
+    .topnav a { font-size: 12px; white-space: nowrap; padding: 16px 2px; }
+    .clear-chat-btn { font-size: 10px; padding: 4px 10px; margin-right: 4px; white-space: nowrap; }
+    .chat-wrap { padding: 12px 12px 0; }
+    .msg .bubble { max-width: 92%; padding: 10px 14px; font-size: 13px; }
+    .msg .avatar { width: 28px; height: 28px; font-size: 12px; }
+    .input-bar { padding: 10px 0 16px; gap: 8px; }
+    .input-bar textarea { font-size: 13px; padding: 10px 12px; border-radius: 10px; }
+    .input-bar button { width: 42px; height: 42px; font-size: 18px; border-radius: 10px; }
+    .welcome { padding: 20px 8px; gap: 12px; }
+    .welcome h2 { font-size: 20px; }
+    .welcome p { font-size: 13px; }
+    .suggestions { gap: 6px; }
+    .suggestions button { font-size: 11px; padding: 6px 12px; }
+    .po-panel { display: none !important; }
+    .modal { width: 92vw; padding: 20px; }
+  }
 </style>
 </head>
 <body>

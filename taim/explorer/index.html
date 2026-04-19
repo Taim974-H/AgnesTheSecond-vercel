@@ -685,6 +685,41 @@
   /* ── Supplier body show-more helpers ─────────── */
   .ing-hidden { display: none !important; }
   .co-in-hidden { display: none !important; }
+
+  /* ── Mobile Responsive ──────────────────────── */
+  @media (max-width: 768px) {
+    .topnav {
+      padding: 0 12px;
+      gap: 12px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .topnav::-webkit-scrollbar { display: none; }
+    .topnav .logo { font-size: 16px; margin-right: 8px; flex-shrink: 0; }
+    .topnav a { font-size: 12px; white-space: nowrap; padding: 16px 2px; }
+    .main { padding: 10px 12px 20px; }
+    .section-header { font-size: 16px; }
+    #graphContainer { height: 320px; }
+    .graph-controls { gap: 8px; }
+    .graph-controls select { font-size: 12px; padding: 8px 28px 8px 10px; }
+    .main-tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+    .main-tabs::-webkit-scrollbar { display: none; }
+    .main-tab { padding: 8px 14px; font-size: 12px; white-space: nowrap; }
+    .detail-columns { grid-template-columns: 1fr; }
+    .xt { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .raw-table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .comp-table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .popup-panel { min-width: unset; width: 96vw; }
+    .popup-body { padding: 10px 12px; }
+    .table-tabs { gap: 4px; }
+    .tab-btn { padding: 5px 10px; font-size: 11px; }
+    .ingr-controls { gap: 8px; }
+    .detail-header { flex-wrap: wrap; }
+    .detail-header h3 { font-size: 16px; }
+    .supplier-chip { font-size: 12px; padding: 8px 10px; }
+    .pager button { min-width: 28px; height: 26px; font-size: 11px; }
+  }
 </style>
 </head>
 <body>

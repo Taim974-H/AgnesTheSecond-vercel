@@ -561,6 +561,55 @@
   .order-footer button:hover { border-color: var(--accent); background: var(--surface); }
   .order-footer button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
   .order-footer button:disabled { opacity: .35; cursor: default; }
+
+  /* ── Mobile Responsive ──────────────────────── */
+  @media (max-width: 768px) {
+    .topnav {
+      padding: 0 12px;
+      gap: 12px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .topnav::-webkit-scrollbar { display: none; }
+    .topnav .logo { font-size: 16px; margin-right: 8px; flex-shrink: 0; }
+    .topnav a { font-size: 12px; white-space: nowrap; padding: 16px 2px; }
+    .cube-stage { width: 140px; height: 140px; }
+    .cube { width: 140px; height: 140px; }
+    .cube-face { width: 140px; height: 140px; }
+    .face-front  { transform: translateZ(70px); }
+    .face-back   { transform: rotateY(180deg) translateZ(70px); }
+    .face-left   { transform: rotateY(-90deg) translateZ(70px); }
+    .face-right  { transform: rotateY(90deg) translateZ(70px); }
+    .face-top    { transform: rotateX(90deg) translateZ(70px); }
+    .face-bottom { transform: rotateX(-90deg) translateZ(70px); }
+    .ambient-glow { width: 300px; height: 300px; }
+    .particles { width: 260px; height: 260px; }
+    .status-area { margin-top: 24px; }
+    .transcript { font-size: 14px; max-width: 90vw; }
+    .controls {
+      bottom: 20px;
+      flex-direction: column;
+      gap: 12px;
+      width: 90vw;
+      align-items: center;
+    }
+    .mic-btn { width: 56px; height: 56px; font-size: 22px; }
+    .text-input-wrap { width: 100%; }
+    .text-input-wrap input { width: 100%; font-size: 13px; padding: 10px 14px; }
+    .text-input-wrap button { padding: 10px 16px; font-size: 13px; }
+    .convo-btn { padding: 10px 20px; font-size: 13px; }
+    .transcript-panel {
+      left: 8px;
+      bottom: 8px;
+      width: calc(100vw - 16px);
+      max-height: 240px;
+    }
+    .order-panel { min-width: unset; width: 96vw; }
+    .order-body iframe { height: 50vh; }
+    .order-footer { padding: 10px 16px; flex-wrap: wrap; }
+    .modal { max-width: 96vw; padding: 20px; }
+  }
 </style>
 </head>
 <body>
