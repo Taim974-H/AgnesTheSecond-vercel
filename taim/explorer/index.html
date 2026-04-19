@@ -686,18 +686,47 @@
   .ing-hidden { display: none !important; }
   .co-in-hidden { display: none !important; }
 
+  /* ── Hamburger (hidden on desktop) ───────────── */
+  .hamburger {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 36px; height: 36px;
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 20px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
   /* ── Mobile Responsive ──────────────────────── */
   @media (max-width: 768px) {
     .topnav {
       padding: 0 12px;
-      gap: 12px;
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-      scrollbar-width: none;
+      flex-wrap: wrap;
+      height: auto;
+      min-height: 56px;
+      gap: 0;
+      position: relative;
+      z-index: 200;
     }
-    .topnav::-webkit-scrollbar { display: none; }
-    .topnav .logo { font-size: 16px; margin-right: 8px; flex-shrink: 0; }
-    .topnav a { font-size: 12px; white-space: nowrap; padding: 16px 2px; }
+    .topnav .logo { font-size: 16px; flex-shrink: 0; order: 1; line-height: 56px; }
+    .hamburger {
+      display: flex;
+      order: 2;
+      margin-left: auto;
+    }
+    .topnav > a {
+      display: none;
+      width: 100%;
+      padding: 12px 12px;
+      border-top: 1px solid var(--border);
+      font-size: 13px;
+      order: 3;
+    }
+    .topnav.nav-open > a { display: block; }
     .main { padding: 10px 12px 20px; }
     .section-header { font-size: 16px; }
     #graphContainer { height: 320px; }
@@ -725,6 +754,7 @@
 <body>
 <div class="topnav">
   <div class="logo">Agnes<span>TheSecond</span></div>
+  <button class="hamburger" onclick="this.parentElement.classList.toggle('nav-open')" aria-label="Menu">&#9776;</button>
   <a href="/">Chat</a>
   <a href="/cube/">Cube</a>
   <a href="/explorer/" class="active">Explorer</a>
